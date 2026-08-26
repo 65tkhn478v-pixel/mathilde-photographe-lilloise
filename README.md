@@ -48,16 +48,22 @@ npm run lint    # oxlint
   informations d'hébergement sont marqués « à compléter »
   (`src/pages/MentionsLegales.jsx`) — informations non communiquées par la
   cliente à ce stade, volontairement non inventées.
-- **Palette** : la palette ivoire / terracotta / sauge (`src/index.css`) est
-  déduite du style des photos disponibles, aucune charte graphique
-  officielle n'existant à ce jour. À réévaluer une fois les fichiers HD
-  reçus, pour caler les tons sur les couleurs dominantes réelles.
+- **Palette et typographie** : palette monochrome blanc/gris (`paper` /
+  `mist` / `ink` / `ink-soft` / `ink-faint` / `line` / `accent`, contrastes
+  AA vérifiés) et typographie reprise du site Pixieset d'origine par
+  inspection des styles calculés — Spectral (titres, équivalent libre de
+  Freight Big Pro), Playfair Display (nav/logo/libellés, repris à
+  l'identique) et Libre Caslon Text (corps de texte, équivalent libre de
+  LTC Caslon). Détail des choix en commentaire dans `src/index.css`.
+  Aucune charte graphique officielle n'existant à ce jour, ces choix
+  restent à valider avec la cliente.
 
 ## Structure
 
 ```
 src/
-  components/   Nav, Footer, Hero, PortfolioGrid, Lightbox, ContactForm...
+  components/   Nav, Footer, Hero, PortfolioGrid, Lightbox, ContactForm,
+                SocialIcons...
   pages/        Home, About, Portfolio, PortfolioCategory, Services, Contact...
   data/         site.js (constantes, réseaux, textes courts)
                 portfolio.js (catégories + photos + alt text)
