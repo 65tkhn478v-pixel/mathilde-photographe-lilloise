@@ -7,7 +7,7 @@ export default function Contact() {
   usePageMeta({
     title: 'Contact',
     description:
-      "Demandez votre devis pour une séance grossesse, naissance, mariage ou famille à Lille. Réponse personnalisée à chaque projet.",
+      "Envie d'un shooting grossesse, naissance, mariage ou famille à Lille ? Contactez-moi, je vous réponds avec plaisir.",
     path: '/contact',
   })
 
@@ -15,7 +15,7 @@ export default function Contact() {
     <div className="pt-28 md:pt-32">
       <div className="mx-auto max-w-2xl px-6 py-16 md:px-10 md:py-24">
         <Reveal className="text-center">
-          <p className="text-xs tracking-[0.3em] text-terracotta uppercase">Contact</p>
+          <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Contact</p>
           <h1 className="mt-4 text-4xl text-ink md:text-5xl">Contactez-moi</h1>
           <p className="mt-6 text-ink-soft">
             Vous aimez ma façon de travailler et souhaitez en savoir plus sur mes tarifs et
@@ -28,7 +28,7 @@ export default function Contact() {
           <ContactForm />
         </Reveal>
 
-        <Reveal delay={0.25} className="mt-16 border-t border-border pt-10 text-center">
+        <Reveal delay={0.25} className="mt-16 border-t border-line pt-10 text-center">
           <p className="text-sm text-ink-faint">Vous pouvez aussi me suivre ici</p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-6">
             {SOCIALS.map((social) => (
@@ -37,7 +37,7 @@ export default function Contact() {
                 href={social.href}
                 target="_blank"
                 rel="noreferrer"
-                className="text-sm text-ink-soft hover:text-terracotta"
+                className="text-sm text-ink-soft hover:text-accent"
               >
                 {social.label}
               </a>

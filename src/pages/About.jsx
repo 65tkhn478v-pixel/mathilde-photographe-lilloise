@@ -25,9 +25,9 @@ export default function About() {
           </Reveal>
 
           <Reveal delay={0.15}>
-            <p className="text-xs tracking-[0.3em] text-terracotta uppercase">À propos de moi</p>
+            <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">À propos de moi</p>
             <h1 className="mt-4 text-4xl text-ink md:text-5xl">Mathilde Lecomte</h1>
-            <p className="mt-2 text-sm tracking-wide text-ink-faint uppercase">
+            <p className="font-label mt-2 text-sm tracking-wide text-ink-faint uppercase">
               Photographe lilloise
             </p>
 
@@ -58,10 +58,10 @@ export default function About() {
         </div>
       </section>
 
-      <section className="bg-ivory-deep py-16 md:py-24">
+      <section className="bg-mist py-16 md:py-24">
         <div className="mx-auto grid max-w-6xl gap-12 px-6 md:grid-cols-2 md:gap-20 md:px-10">
           <Reveal>
-            <p className="text-xs tracking-[0.3em] text-terracotta uppercase">Mon approche</p>
+            <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Mon approche</p>
             <h2 className="mt-4 text-3xl text-ink md:text-4xl">
               Des images qui vous ressemblent
             </h2>

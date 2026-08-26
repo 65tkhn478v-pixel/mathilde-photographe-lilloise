@@ -12,7 +12,7 @@ export default function NotFound() {
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center px-6 text-center">
       <Reveal>
-        <p className="text-xs tracking-[0.3em] text-terracotta uppercase">Erreur 404</p>
+        <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Erreur 404</p>
         <h1 className="mt-4 text-4xl text-ink md:text-5xl">Page introuvable</h1>
         <p className="mt-4 text-ink-soft">
           Cette page n'existe pas ou plus. Retournez à l'accueil pour poursuivre la visite.

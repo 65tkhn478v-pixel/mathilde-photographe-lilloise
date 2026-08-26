@@ -15,7 +15,7 @@ export default function Portfolio() {
     <div className="pt-28 md:pt-32">
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-8 md:px-10 md:pt-24">
         <Reveal>
-          <p className="text-xs tracking-[0.3em] text-terracotta uppercase">Portfolio</p>
+          <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Portfolio</p>
           <h1 className="mt-4 max-w-2xl text-4xl text-ink md:text-5xl">
             Des séances vécues, pas mises en scène
           </h1>
@@ -27,7 +27,7 @@ export default function Portfolio() {
           {CATEGORIES.map((category, index) => (
             <Reveal key={category.slug} delay={index * 0.08}>
               {category.comingSoon ? (
-                <div className="flex aspect-[4/3] flex-col items-center justify-center border border-dashed border-ink/25 bg-ivory-deep px-8 text-center">
+                <div className="flex aspect-[4/3] flex-col items-center justify-center border border-dashed border-ink/25 bg-mist px-8 text-center">
                   <p className="font-display text-2xl text-ink">{category.label}</p>
                   <p className="mt-2 text-sm text-ink-faint">Galerie à venir</p>
                 </div>
@@ -48,8 +48,8 @@ export default function Portfolio() {
                     aria-hidden="true"
                   />
                   <div className="absolute inset-x-0 bottom-0 p-6">
-                    <p className="font-display text-2xl text-ivory">{category.label}</p>
-                    <p className="mt-1 max-w-xs text-sm text-ivory/75">{category.intro}</p>
+                    <p className="font-display text-2xl text-paper">{category.label}</p>
+                    <p className="mt-1 max-w-xs text-sm text-paper/75">{category.intro}</p>
                   </div>
                 </Link>
               )}

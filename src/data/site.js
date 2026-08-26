@@ -13,8 +13,8 @@ export const TAGLINE = 'Des instants vrais, pour des souvenirs tendres'
 export const HOOK =
   "J'immortalise vos plus beaux souvenirs — Grossesse • Naissance • Famille • Mariage — Lille | Nord"
 
-// TODO: adresse mail de contact — les demandes de devis sont envoyées ici
-// via un lien mailto (pas de backend/formulaire tiers configuré pour
+// TODO: adresse mail de contact — les messages du formulaire sont envoyés
+// ici via un lien mailto (pas de backend/formulaire tiers configuré pour
 // l'instant, voir src/components/ContactForm.jsx).
 export const CONTACT_EMAIL = 'lecomtemathildeproo@gmail.com'
 

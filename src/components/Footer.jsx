@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom'
 import { LOCATION, NAV_LINKS, SOCIALS } from '../data/site'
+import { InstagramIcon, PinterestIcon, TikTokIcon } from './SocialIcons'
+
+const SOCIAL_ICONS = {
+  Instagram: InstagramIcon,
+  TikTok: TikTokIcon,
+  Pinterest: PinterestIcon,
+}
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-ivory-deep">
+    <footer className="border-t border-line bg-mist">
       <div className="mx-auto max-w-6xl px-6 py-16 md:px-10">
         <div className="grid gap-12 md:grid-cols-3">
           <div>
@@ -12,17 +19,17 @@ export function Footer() {
           </div>
 
           <nav aria-label="Plan du site">
-            <p className="text-xs tracking-[0.2em] text-ink-faint uppercase">Navigation</p>
+            <p className="font-label text-xs tracking-[0.2em] text-ink-faint uppercase">Navigation</p>
             <ul className="mt-4 space-y-2 text-sm">
               {NAV_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="text-ink-soft hover:text-terracotta">
+                  <Link to={link.to} className="text-ink-soft hover:text-accent">
                     {link.label}
                   </Link>
                 </li>
               ))}
               <li>
-                <Link to="/mentions-legales" className="text-ink-soft hover:text-terracotta">
+                <Link to="/mentions-legales" className="text-ink-soft hover:text-accent">
                   Mentions légales
                 </Link>
               </li>
@@ -30,20 +37,24 @@ export function Footer() {
           </nav>
 
           <div>
-            <p className="text-xs tracking-[0.2em] text-ink-faint uppercase">Suivre</p>
-            <ul className="mt-4 space-y-2 text-sm">
-              {SOCIALS.map((social) => (
-                <li key={social.label}>
-                  <a
-                    href={social.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-ink-soft hover:text-terracotta"
-                  >
-                    {social.label}
-                  </a>
-                </li>
-              ))}
+            <p className="font-label text-xs tracking-[0.2em] text-ink-faint uppercase">Suivre</p>
+            <ul className="mt-4 flex items-center gap-4">
+              {SOCIALS.map((social) => {
+                const Icon = SOCIAL_ICONS[social.label]
+                return (
+                  <li key={social.label}>
+                    <a
+                      href={social.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${social.label} de Mathilde Lecomte`}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         </div>

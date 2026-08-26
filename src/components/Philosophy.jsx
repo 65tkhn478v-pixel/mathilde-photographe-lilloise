@@ -15,7 +15,7 @@ export function Philosophy() {
         </Reveal>
 
         <Reveal delay={0.15}>
-          <p className="text-xs tracking-[0.3em] text-terracotta uppercase">Philosophie</p>
+          <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Philosophie</p>
           <h2 className="mt-4 text-3xl text-ink md:text-4xl">
             L'authenticité plutôt que la mise en scène
           </h2>

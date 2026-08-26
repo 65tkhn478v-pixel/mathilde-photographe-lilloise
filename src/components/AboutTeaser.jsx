@@ -6,7 +6,7 @@ export function AboutTeaser() {
     <section className="mx-auto max-w-6xl px-6 py-24 md:px-10 md:py-32">
       <div className="grid items-center gap-12 md:grid-cols-2 md:gap-20">
         <Reveal className="order-2 md:order-1">
-          <p className="text-xs tracking-[0.3em] text-terracotta uppercase">Mon approche</p>
+          <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Mon approche</p>
           <h2 className="mt-4 text-3xl text-ink md:text-4xl">
             Le naturel plutôt que la pose, l'émotion plutôt que la perfection
           </h2>

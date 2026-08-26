@@ -57,7 +57,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }) {
                   <Dialog.Title>{photo?.alt ?? 'Photo'}</Dialog.Title>
                 </VisuallyHidden>
 
-                <div className="flex items-center justify-between px-6 py-4 text-ivory">
+                <div className="flex items-center justify-between px-6 py-4 text-paper">
                   <span className="text-xs tracking-[0.2em] uppercase">
                     {index + 1} / {photos.length}
                   </span>
@@ -73,7 +73,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }) {
                     type="button"
                     onClick={() => goTo(-1)}
                     aria-label="Photo précédente"
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-3 text-ivory/70 hover:text-ivory md:left-6"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-3 text-paper/70 hover:text-paper md:left-6"
                   >
                     <span aria-hidden="true">‹</span>
                   </button>
@@ -89,7 +89,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }) {
                     type="button"
                     onClick={() => goTo(1)}
                     aria-label="Photo suivante"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-3 text-ivory/70 hover:text-ivory md:right-6"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-3 text-paper/70 hover:text-paper md:right-6"
                   >
                     <span aria-hidden="true">›</span>
                   </button>

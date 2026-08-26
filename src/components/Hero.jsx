@@ -21,7 +21,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-xs tracking-[0.3em] text-ivory/80 uppercase"
+          className="font-label text-xs tracking-[0.3em] text-paper/80 uppercase"
         >
           Photographe lilloise
         </motion.p>
@@ -29,7 +29,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.25 }}
-          className="mt-4 max-w-2xl text-4xl text-ivory italic md:text-6xl"
+          className="mt-4 max-w-2xl text-4xl font-light text-paper md:text-6xl"
         >
           {TAGLINE}
         </motion.h1>
@@ -37,7 +37,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="mt-5 max-w-lg text-sm tracking-wide text-ivory/85 md:text-base"
+          className="mt-5 max-w-lg text-sm tracking-wide text-paper/85 md:text-base"
         >
           {HOOK}
         </motion.p>
@@ -47,7 +47,7 @@ export function Hero() {
           transition={{ duration: 0.8, delay: 0.55 }}
           className="mt-9 flex flex-wrap gap-4"
         >
-          <Button to="/contact" variant="primary" className="bg-terracotta hover:bg-ivory hover:text-ink">
+          <Button to="/contact" variant="primary" className="bg-accent hover:bg-paper hover:text-ink">
             Me contacter
           </Button>
           <Button to="/portfolio" variant="ghost">

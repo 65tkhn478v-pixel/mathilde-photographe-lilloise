@@ -33,7 +33,7 @@ export default function Services() {
   usePageMeta({
     title: 'Services',
     description:
-      'Séances photo grossesse, naissance, mariage, famille, couple et portrait individuel à Lille. Devis personnalisé sur demande.',
+      'Séances photo grossesse, naissance, mariage, famille, couple et portrait individuel à Lille. Contactez-moi pour en discuter.',
     path: '/services',
   })
 
@@ -41,7 +41,7 @@ export default function Services() {
     <div className="pt-28 md:pt-32">
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-8 md:px-10 md:pt-24">
         <Reveal>
-          <p className="text-xs tracking-[0.3em] text-terracotta uppercase">Explorez</p>
+          <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Explorez</p>
           <h1 className="mt-4 max-w-xl text-4xl text-ink md:text-5xl">Mes offres et services</h1>
           <p className="mt-6 max-w-lg text-ink-soft">
             Chaque séance photo est une rencontre, une histoire, un moment de vie capturé avec
@@ -72,9 +72,9 @@ export default function Services() {
           ))}
         </div>
 
-        <Reveal delay={0.2} className="mt-16 border-t border-border pt-10 text-center">
+        <Reveal delay={0.2} className="mt-16 border-t border-line pt-10 text-center">
           <p className="font-display text-xl text-ink">
-            Les devis et tarifs se font via le formulaire de contact
+            Contactez-moi si vous avez envie d'un shooting ou d'une idée
           </p>
           <Button to="/contact" className="mt-6">
             Contactez-moi

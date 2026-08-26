@@ -15,10 +15,10 @@ const spans = {
 
 export function PortfolioPreview() {
   return (
-    <section className="bg-ivory-deep py-24 md:py-32">
+    <section className="bg-mist py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
         <Reveal>
-          <p className="text-xs tracking-[0.3em] text-terracotta uppercase">Portfolio</p>
+          <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Portfolio</p>
           <h2 className="mt-4 max-w-lg text-3xl text-ink md:text-4xl">
             Des instants réels, saisis au fil des séances
           </h2>
@@ -28,7 +28,7 @@ export function PortfolioPreview() {
           {CATEGORIES.map((category, index) => (
             <Reveal key={category.slug} delay={index * 0.08} className={spans[category.slug]}>
               {category.comingSoon ? (
-                <div className="flex h-full min-h-[220px] flex-col items-center justify-center border border-dashed border-ink/25 bg-ivory px-8 text-center">
+                <div className="flex h-full min-h-[220px] flex-col items-center justify-center border border-dashed border-ink/25 bg-paper px-8 text-center">
                   <p className="font-display text-2xl text-ink">{category.label}</p>
                   <p className="mt-2 text-sm text-ink-faint">Galerie à venir</p>
                 </div>
@@ -51,7 +51,7 @@ export function PortfolioPreview() {
                     )}
                     aria-hidden="true"
                   />
-                  <span className="absolute bottom-5 left-6 font-display text-xl text-ivory md:text-2xl">
+                  <span className="absolute bottom-5 left-6 font-display text-xl text-paper md:text-2xl">
                     {category.label}
                   </span>
                 </Link>

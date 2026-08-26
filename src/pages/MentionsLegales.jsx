@@ -30,7 +30,7 @@ export default function MentionsLegales() {
               <h2 className="font-display text-xl text-ink">Contact</h2>
               <p className="mt-2">
                 Via le{' '}
-                <a href="/contact" className="underline hover:text-terracotta">
+                <a href="/contact" className="underline hover:text-accent">
                   formulaire de contact
                 </a>
                 .
@@ -58,8 +58,8 @@ export default function MentionsLegales() {
               <h2 className="font-display text-xl text-ink">Données personnelles</h2>
               <p className="mt-2">
                 Les informations transmises via le formulaire de contact sont utilisées
-                uniquement pour répondre à votre demande de devis et ne sont ni cédées ni
-                utilisées à d'autres fins.
+                uniquement pour répondre à votre message et ne sont ni cédées ni utilisées à
+                d'autres fins.
               </p>
             </section>
           </div>

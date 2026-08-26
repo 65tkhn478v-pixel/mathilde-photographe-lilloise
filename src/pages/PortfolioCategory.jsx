@@ -22,7 +22,7 @@ export default function PortfolioCategory() {
     <div className="pt-28 md:pt-32">
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-10 md:px-10 md:pt-24">
         <Reveal>
-          <Link to="/portfolio" className="text-xs tracking-[0.2em] text-ink-faint uppercase hover:text-terracotta">
+          <Link to="/portfolio" className="font-label text-xs tracking-[0.2em] text-ink-faint uppercase hover:text-accent">
             ← Tout le portfolio
           </Link>
           <h1 className="mt-4 text-4xl text-ink md:text-5xl">{category.label}</h1>
@@ -32,7 +32,7 @@ export default function PortfolioCategory() {
 
       <div className="mx-auto max-w-6xl px-6 pb-24 md:px-10 md:pb-32">
         {category.comingSoon ? (
-          <div className="flex flex-col items-center border border-dashed border-ink/25 bg-ivory-deep px-8 py-20 text-center">
+          <div className="flex flex-col items-center border border-dashed border-ink/25 bg-mist px-8 py-20 text-center">
             <p className="font-display text-2xl text-ink">Galerie à venir</p>
             <p className="mt-3 max-w-sm text-sm text-ink-soft">
               Cette catégorie n'a pas encore de galerie dédiée. Elle sera mise en ligne dès que

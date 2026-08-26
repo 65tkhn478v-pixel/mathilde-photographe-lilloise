@@ -1,29 +1,45 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Playfair+Display:wght@400;500;600&family=Libre+Caslon+Text:ital,wght@0,400;1,400&display=swap");
 @import "tailwindcss";
 
 /*
   Design system — Mathilde Lecomte, photographe (Lille)
-  Palette déduite (aucune charte de marque existante, voir AGENTS.md du brief) :
-  ivoire chaud / brun-noir doux / terracotta discret / vert sauge muté.
-  À réévaluer une fois les fichiers HD de la cliente reçus : caler les tons
-  sur les couleurs dominantes réelles de ses photos plutôt que l'inverse.
+
+  Typographie reprise du site Pixieset d'origine (thème "Jennifer",
+  mathilde-photographelille.mypixieset.com), identifiée par inspection des
+  styles calculés (devtools) plutôt que devinée :
+    - Titres / grands intitulés  : "Freight Big Pro" (poids 300) — police
+      propriétaire payante (GarageFonts). Équivalent libre retenu : Spectral
+      (poids 300), même registre serif élégant et léger à grande taille.
+    - Nav / logo "ML" / libellés majuscules espacés ("PHOTOGRAPHE LILLOISE") :
+      "Playfair Display" — police déjà disponible sur Google Fonts, reprise
+      à l'identique (aucune approximation nécessaire ici).
+    - Corps de texte / labels de formulaire : "LTC Caslon" — police
+      propriétaire payante (Lanston Type Co.). Équivalent libre retenu :
+      Libre Caslon Text, révival Caslon explicitement conçu pour le texte
+      courant, registre quasi identique.
+  Les champs de formulaire natifs (input/textarea/select) gardent une pile
+  sans-serif système, comme sur le site d'origine (le thème n'y applique pas
+  sa typographie serif).
+
+  Palette blanc/gris monochrome (remplace l'ancienne palette ivoire/
+  terracotta/sauge) : l'élégance vient du contraste noir/blanc/gris et de
+  l'espace, pas d'un accent coloré. Contrastes vérifiés WCAG AA (voir notes
+  en regard de chaque teinte de texte).
 */
 @theme {
-  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Spectral", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-label: "Playfair Display", Georgia, serif;
+  --font-body: "Libre Caslon Text", Georgia, serif;
+  --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --color-ivory: #faf5ee;
-  --color-ivory-deep: #f2ebe0;
-  --color-paper: #fffdfa;
-  --color-ink: #2c241d;
-  --color-ink-soft: #5a5147;
-  --color-ink-faint: #9c9284;
-  --color-terracotta: #b4592f;
-  --color-terracotta-soft: #d99a72;
-  --color-terracotta-pale: #f0dccb;
-  --color-sauge: #7c8a6c;
-  --color-sauge-pale: #e3e6da;
-  --color-border: #e6dcce;
+  --color-paper: #ffffff; /* fond principal */
+  --color-mist: #f4f4f4; /* fond secondaire (sections alternées, cartes) */
+  --color-ink: #1f1f1f; /* texte principal — anthracite, pas de noir pur */
+  --color-ink-soft: #55555a; /* texte secondaire — contraste ~7.4:1 sur blanc */
+  --color-ink-faint: #6b6b6b; /* texte tertiaire/légendes — contraste ~5.3:1 sur blanc (AA) */
+  --color-line: #e0e0e0; /* bordures, séparateurs */
+  --color-accent: #46464a; /* accent gris foncé (boutons, liens actifs, focus) — contraste ~8.9:1 sur blanc */
+  --color-accent-soft: #d9d9d9; /* fond discret (sélection, encart) */
 
   --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade-in: fade-in 0.6s ease-out both;
@@ -50,7 +66,7 @@
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    border-color: var(--color-line);
   }
 
   html {
@@ -59,9 +75,9 @@
 
   body {
     margin: 0;
-    background-color: var(--color-ivory);
+    background-color: var(--color-paper);
     color: var(--color-ink);
-    font-family: var(--font-sans);
+    font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -70,9 +86,15 @@
   h3,
   h4 {
     font-family: var(--font-display);
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: -0.01em;
     text-wrap: balance;
+  }
+
+  input,
+  textarea,
+  select {
+    font-family: var(--font-sans);
   }
 
   a {
@@ -80,12 +102,12 @@
   }
 
   ::selection {
-    background-color: var(--color-terracotta-pale);
+    background-color: var(--color-accent-soft);
     color: var(--color-ink);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-terracotta);
+    outline: 2px solid var(--color-accent);
     outline-offset: 3px;
   }
 }

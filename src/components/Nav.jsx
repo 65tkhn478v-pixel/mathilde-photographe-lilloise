@@ -29,15 +29,15 @@ export function Nav() {
     <header
       className={clsx(
         'fixed inset-x-0 top-0 z-50 transition-colors duration-500',
-        transparent ? 'bg-transparent' : 'bg-ivory/95 backdrop-blur-sm border-b border-border'
+        transparent ? 'bg-transparent' : 'bg-paper/95 backdrop-blur-sm border-b border-line'
       )}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 md:px-10">
         <Link
           to="/"
           className={clsx(
-            'font-display text-lg tracking-[0.15em]',
-            transparent ? 'text-ivory' : 'text-ink'
+            'font-label text-lg tracking-[0.15em]',
+            transparent ? 'text-paper' : 'text-ink'
           )}
           aria-label={`${SITE_NAME} — accueil`}
         >
@@ -45,7 +45,7 @@ export function Nav() {
         </Link>
 
         <nav className="hidden md:block" aria-label="Navigation principale">
-          <ul className="flex items-center gap-9 text-sm tracking-wide uppercase">
+          <ul className="font-label flex items-center gap-9 text-sm tracking-wide uppercase">
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
                 <NavLink
@@ -54,7 +54,7 @@ export function Nav() {
                   className={({ isActive }) =>
                     clsx(
                       'pb-1 border-b transition-colors duration-200',
-                      transparent ? 'text-ivory' : 'text-ink',
+                      transparent ? 'text-paper' : 'text-ink',
                       isActive
                         ? 'border-current'
                         : 'border-transparent hover:border-current/60'
@@ -74,7 +74,7 @@ export function Nav() {
               type="button"
               className={clsx(
                 'md:hidden flex flex-col gap-1.5 p-2 -mr-2',
-                transparent ? 'text-ivory' : 'text-ink'
+                transparent ? 'text-paper' : 'text-ink'
               )}
               aria-label="Ouvrir le menu"
             >
@@ -88,7 +88,7 @@ export function Nav() {
               <Dialog.Portal forceMount>
                 <Dialog.Overlay asChild forceMount>
                   <motion.div
-                    className="fixed inset-0 z-50 bg-ivory"
+                    className="fixed inset-0 z-50 bg-paper"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -107,7 +107,7 @@ export function Nav() {
                       <Dialog.Title>Menu de navigation</Dialog.Title>
                     </VisuallyHidden>
                     <div className="flex items-center justify-between px-6 py-5">
-                      <span className="font-display text-lg tracking-[0.15em] text-ink">ML</span>
+                      <span className="font-label text-lg tracking-[0.15em] text-ink">ML</span>
                       <Dialog.Close asChild>
                         <button
                           type="button"
@@ -129,8 +129,8 @@ export function Nav() {
                           end={link.to === '/'}
                           className={({ isActive }) =>
                             clsx(
-                              'font-display text-3xl',
-                              isActive ? 'text-terracotta' : 'text-ink'
+                              'font-label text-3xl',
+                              isActive ? 'text-accent' : 'text-ink'
                             )
                           }
                         >
