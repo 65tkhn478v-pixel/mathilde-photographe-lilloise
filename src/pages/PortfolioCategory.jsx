@@ -21,7 +21,7 @@ export default function PortfolioCategory() {
   return (
     <div className="pt-28 md:pt-32">
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-10 md:px-10 md:pt-24">
-        <Reveal>
+        <Reveal className="flex flex-col items-center text-center">
           <Link to="/portfolio" className="font-label text-xs tracking-[0.2em] text-ink-faint uppercase hover:text-accent">
             ← Tout le portfolio
           </Link>

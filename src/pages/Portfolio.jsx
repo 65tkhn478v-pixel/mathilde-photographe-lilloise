@@ -14,7 +14,7 @@ export default function Portfolio() {
   return (
     <div className="pt-28 md:pt-32">
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-8 md:px-10 md:pt-24">
-        <Reveal>
+        <Reveal className="flex flex-col items-center text-center">
           <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Portfolio</p>
           <h1 className="mt-4 max-w-2xl text-4xl text-ink md:text-5xl">
             Des séances vécues, pas mises en scène

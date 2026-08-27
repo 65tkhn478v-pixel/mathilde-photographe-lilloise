@@ -13,21 +13,21 @@ export const CATEGORIES = [
     slug: 'mariage',
     label: 'Mariage',
     intro:
-      "Des rires avant la mairie, des mains qui se cherchent, un baiser volé dans un escalier de pierre : le mariage vu comme une journée vécue, pas comme une mise en scène.",
+      'Des rires, des mains qui se cherchent, un baiser volé dans un escalier de pierre — le mariage vécu, pas mis en scène.',
     cover: '/images/portfolio/mariage/mariage-08.webp',
   },
   {
     slug: 'grossesse',
     label: 'Grossesse',
     intro:
-      "Un ventre qu'on tient à deux mains, une lumière de fin d'après-midi : des séances pensées pour garder la trace de cette attente, avec pudeur et douceur.",
+      "Un ventre tenu à deux mains, une lumière de fin d'après-midi — la trace de cette attente, avec pudeur.",
     cover: '/images/portfolio/grossesse/grossesse-03.webp',
   },
   {
     slug: 'naissance',
     label: 'Naissance',
     intro:
-      "Les tout premiers jours : une main qui se referme sur un doigt, un sommeil profond contre une épaule. Des images pour ne rien oublier de ce temps qui file trop vite.",
+      'Les tout premiers jours : une main refermée sur un doigt, un sommeil profond contre une épaule.',
     cover: '/images/portfolio/naissance/naissance-08.webp',
   },
   {

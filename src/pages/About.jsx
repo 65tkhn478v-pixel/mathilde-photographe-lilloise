@@ -25,12 +25,16 @@ export default function About() {
           </Reveal>
 
           <Reveal delay={0.15}>
-            <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">À propos de moi</p>
-            <h1 className="mt-4 text-4xl text-ink md:text-5xl">Mathilde Lecomte</h1>
-            <p className="font-label mt-2 text-sm tracking-wide text-ink-faint uppercase">
-              Photographe lilloise
-            </p>
+            <div className="text-center">
+              <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">À propos de moi</p>
+              <h1 className="mt-4 text-4xl text-ink md:text-5xl">Mathilde Lecomte</h1>
+              <p className="font-label mt-2 text-sm tracking-wide text-ink-faint uppercase">
+                Photographe lilloise
+              </p>
+            </div>
 
+            {/* Paragraphes longs : alignés à gauche, un centrage nuirait à
+                la lisibilité (voir consigne alignement). */}
             <div className="mt-8 space-y-5 text-ink-soft">
               <p>
                 Mon objectif : capturer les moments précieux de votre vie avec sensibilité et
@@ -58,13 +62,23 @@ export default function About() {
         </div>
       </section>
 
-      <section className="bg-mist py-16 md:py-24">
+      {/*
+        Fond papier (#FAF4E8) plutôt que mist (#EADCC8) ici : cette section
+        contient de longs paragraphes de lecture, et #7C644C sur #EADCC8
+        tombe à 4.11:1 — sous le seuil AA texte courant (4.5:1). Séparée du
+        bloc précédent par une bordure plutôt qu'un aplat de couleur (voir
+        note de contraste dans index.css).
+      */}
+      <section className="border-y border-line bg-paper py-16 md:py-24">
         <div className="mx-auto grid max-w-6xl gap-12 px-6 md:grid-cols-2 md:gap-20 md:px-10">
           <Reveal>
-            <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Mon approche</p>
-            <h2 className="mt-4 text-3xl text-ink md:text-4xl">
-              Des images qui vous ressemblent
-            </h2>
+            <div className="text-center">
+              <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Mon approche</p>
+              <h2 className="mt-4 text-3xl text-ink md:text-4xl">
+                Des images qui vous ressemblent
+              </h2>
+            </div>
+            {/* Paragraphes longs : alignés à gauche (voir consigne alignement). */}
             <div className="mt-6 space-y-5 text-ink-soft">
               <p>
                 J'aime créer des images naturelles, spontanées et pleines de vie, qui racontent

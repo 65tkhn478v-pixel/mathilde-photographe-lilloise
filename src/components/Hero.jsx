@@ -16,7 +16,7 @@ export function Hero() {
         aria-hidden="true"
       />
 
-      <div className="relative mx-auto w-full max-w-6xl px-6 pb-20 md:px-10 md:pb-28">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-6 pb-20 text-center md:px-10 md:pb-28">
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -45,9 +45,9 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.55 }}
-          className="mt-9 flex flex-wrap gap-4"
+          className="mt-9 flex flex-wrap justify-center gap-4"
         >
-          <Button to="/contact" variant="primary" className="bg-accent hover:bg-paper hover:text-ink">
+          <Button to="/contact" variant="inverse">
             Me contacter
           </Button>
           <Button to="/portfolio" variant="ghost">

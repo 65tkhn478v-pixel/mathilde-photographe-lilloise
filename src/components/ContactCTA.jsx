@@ -12,7 +12,7 @@ export function ContactCTA() {
           savoir plus et d'échanger avec vous.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-          <Button to="/contact" className="bg-accent hover:bg-paper hover:text-ink">
+          <Button to="/contact" variant="inverse">
             Me contacter
           </Button>
           <Button href={SOCIALS[0].href} variant="ghost">

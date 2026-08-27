@@ -2,12 +2,21 @@ import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 
 const base =
-  'font-label inline-flex items-center justify-center gap-2 rounded-sm px-7 py-3.5 text-sm tracking-wide uppercase transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4'
+  'font-label inline-flex items-center justify-center gap-2 rounded-sm px-7 py-3.5 text-sm tracking-wide uppercase transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-4'
 
+// La palette café ne fournit qu'une seule teinte de texte/accent (#7C644C) :
+// pas de second brun plus sombre pour un hover "couleur sur couleur". Le
+// hover du bouton plein se fait donc en opacité plutôt qu'en changement de
+// teinte. "inverse" (pour les CTA posés sur une section/photo sombre) est
+// un variant à part entière plutôt qu'une className de substitution : deux
+// jeux de classes bg-*/text-* concurrents dans un même élément dépendent de
+// l'ordre de génération Tailwind, pas de l'ordre dans le JSX — les définir
+// dans un seul variant évite tout conflit silencieux.
 const variants = {
-  primary: 'bg-ink text-paper hover:bg-accent',
+  primary: 'border border-ink bg-ink text-paper hover:opacity-90',
   secondary: 'border border-ink/40 text-ink hover:border-ink hover:bg-ink hover:text-paper',
   ghost: 'text-paper border border-paper/70 hover:border-paper hover:bg-paper/10',
+  inverse: 'border border-paper bg-paper text-ink hover:bg-mist',
 }
 
 /**

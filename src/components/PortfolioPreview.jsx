@@ -17,7 +17,7 @@ export function PortfolioPreview() {
   return (
     <section className="bg-mist py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
-        <Reveal>
+        <Reveal className="flex flex-col items-center text-center">
           <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Portfolio</p>
           <h2 className="mt-4 max-w-lg text-3xl text-ink md:text-4xl">
             Des instants réels, saisis au fil des séances

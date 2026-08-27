@@ -18,9 +18,7 @@ export default function Contact() {
           <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Contact</p>
           <h1 className="mt-4 text-4xl text-ink md:text-5xl">Contactez-moi</h1>
           <p className="mt-6 text-ink-soft">
-            Vous aimez ma façon de travailler et souhaitez en savoir plus sur mes tarifs et
-            disponibilités ? Racontez-moi votre projet, j'ai hâte d'en savoir plus et
-            d'échanger avec vous !
+            Racontez-moi votre projet — j'ai hâte d'en savoir plus et d'échanger avec vous !
           </p>
         </Reveal>
 

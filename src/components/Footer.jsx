@@ -10,7 +10,10 @@ const SOCIAL_ICONS = {
 
 export function Footer() {
   return (
-    <footer className="border-t border-line bg-mist">
+    // bg-paper plutôt que bg-mist : le footer porte des liens de
+    // navigation réels (texte courant, pas juste décoratif) — voir note de
+    // contraste #7C644C/#EADCC8 dans index.css.
+    <footer className="border-t border-line bg-paper">
       <div className="mx-auto max-w-6xl px-6 py-16 md:px-10">
         <div className="grid gap-12 md:grid-cols-3">
           <div>

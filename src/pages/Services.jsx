@@ -40,14 +40,12 @@ export default function Services() {
   return (
     <div className="pt-28 md:pt-32">
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-8 md:px-10 md:pt-24">
-        <Reveal>
+        <Reveal className="flex flex-col items-center text-center">
           <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Explorez</p>
           <h1 className="mt-4 max-w-xl text-4xl text-ink md:text-5xl">Mes offres et services</h1>
           <p className="mt-6 max-w-lg text-ink-soft">
-            Chaque séance photo est une rencontre, une histoire, un moment de vie capturé avec
-            sensibilité. Je vous propose plusieurs formules pensées pour s'adapter à vos
-            besoins, tout en laissant une place à la spontanéité, à l'émotion et à
-            l'authenticité.
+            Chaque séance est une rencontre, un moment de vie capturé avec sensibilité — pensé
+            pour s'adapter à vos besoins.
           </p>
         </Reveal>
       </section>
