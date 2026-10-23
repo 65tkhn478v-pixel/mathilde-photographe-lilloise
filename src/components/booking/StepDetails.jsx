@@ -1,6 +1,6 @@
 import * as Checkbox from '@radix-ui/react-checkbox'
 import { Link } from 'react-router-dom'
-import { MESSAGE_MAX_LENGTH, NAME_MAX_LENGTH } from '../../../shared/booking.js'
+import { INSTAGRAM_MAX_LENGTH, MESSAGE_MAX_LENGTH, NAME_MAX_LENGTH } from '../../../shared/booking.js'
 import { Button } from '../Button'
 import { FieldError } from '../ui/Notice'
 import { StepHeading, linkClasses } from './shared'
@@ -112,6 +112,34 @@ export function StepDetails({ values, onChange, errors, onNext, onBack, focusOnM
         </Field>
 
         <Field
+          name="instagram"
+          label="Instagram"
+          hint="Si vous préférez que je vous écrive sur Instagram"
+          error={errors.instagram}
+        >
+          {(props) => (
+            <div className="relative">
+              <span aria-hidden="true" className="pointer-events-none absolute bottom-2.5 left-0 font-sans text-ink">
+                @
+              </span>
+              <input
+                {...props}
+                type="text"
+                autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="votre.compte"
+                maxLength={INSTAGRAM_MAX_LENGTH + 90}
+                value={values.instagram}
+                onChange={update('instagram')}
+                className={inputClasses.replace('px-0', 'pr-0 pl-5')}
+              />
+            </div>
+          )}
+        </Field>
+
+        <Field
           name="message"
           label="Message"
           hint={`${values.message.length} / ${MESSAGE_MAX_LENGTH} caractères`}
@@ -120,7 +148,8 @@ export function StepDetails({ values, onChange, errors, onNext, onBack, focusOnM
           {(props) => (
             <textarea
               {...props}
-              rows={4}
+              rows={5}
+              placeholder="Dites-m’en un peu plus : qui êtes-vous, ce que vous imaginez pour cette séance, vos envies, vos questions…"
               maxLength={MESSAGE_MAX_LENGTH}
               value={values.message}
               onChange={update('message')}

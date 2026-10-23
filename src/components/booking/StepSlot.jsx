@@ -6,12 +6,14 @@ import { useApiData } from '../../lib/useApiData'
 import { dateKey, formatKeyLong, formatKeyMedium, formatRange, weekStart } from '../../../shared/time.js'
 import { Button } from '../Button'
 import { FieldError, Loading, Notice } from '../ui/Notice'
+import { StatusIcon } from '../ui/StatusBadge'
+import { SessionReminder } from './SessionReminder'
 import { StepHeading, choiceClasses, linkClasses } from './shared'
 
 // Au-delà de deux semaines de créneaux publiés, on affiche une semaine à la fois.
 const MAX_WEEKS_WITHOUT_PAGING = 2
 
-export function StepSlot({ value, onChange, onNext, onBack, notice, error, focusOnMount }) {
+export function StepSlot({ sessionType, onEditSession, value, onChange, onNext, onBack, notice, error, focusOnMount }) {
   const [pickedWeek, setPickedWeek] = useState(null)
 
   // Rechargés à chaque arrivée sur l'étape (le composant est remonté).
@@ -54,6 +56,12 @@ export function StepSlot({ value, onChange, onNext, onBack, notice, error, focus
       <StepHeading focusOnMount={focusOnMount}>
         <span id="slot-legend">Votre créneau</span>
       </StepHeading>
+
+      {sessionType && (
+        <div className="mt-6 border-y border-line py-3">
+          <SessionReminder type={sessionType} onEdit={onEditSession} />
+        </div>
+      )}
 
       {notice && <Notice tone="error" className="mt-6">{notice}</Notice>}
 
@@ -137,8 +145,14 @@ export function StepSlot({ value, onChange, onNext, onBack, notice, error, focus
                     <RadioGroup.Item
                       key={slot.id}
                       value={String(slot.id)}
-                      className={clsx(choiceClasses, 'min-h-12 rounded-sm px-3 text-center text-base whitespace-nowrap')}
+                      className={clsx(
+                        choiceClasses,
+                        'inline-flex min-h-12 items-center justify-center gap-2 rounded-sm px-3 text-base whitespace-nowrap'
+                      )}
                     >
+                      <RadioGroup.Indicator>
+                        <StatusIcon name="check" className="h-4 w-4" />
+                      </RadioGroup.Indicator>
                       {formatRange(slot.start_at, slot.end_at)}
                     </RadioGroup.Item>
                   ))}

@@ -18,6 +18,7 @@ const ROUTES = [
   ['POST', '/api/admin/logout', admin.logout, { public: true }],
   ['GET', '/api/admin/session', admin.session],
 
+  ['GET', '/api/admin/calendar', admin.calendar],
   ['GET', '/api/admin/slots', admin.listSlots],
   ['POST', '/api/admin/slots', admin.createSlots],
   ['POST', '/api/admin/slots/duplicate-week', admin.duplicateWeek],
@@ -38,7 +39,7 @@ const ROUTES = [
   options,
 }))
 
-async function route(request, env) {
+async function route(request, env, ctx) {
   const { pathname } = new URL(request.url)
   const matches = ROUTES.filter((r) => r.pattern.test(pathname))
   if (matches.length === 0) return error(404, 'Adresse inconnue.')
@@ -54,13 +55,13 @@ async function route(request, env) {
 
   const params = match.pattern.exec(pathname).groups ?? {}
   if (params.id) params.id = Number(params.id)
-  return match.handler(request, env, params)
+  return match.handler(request, env, params, ctx)
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     try {
-      return await route(request, env)
+      return await route(request, env, ctx)
     } catch (err) {
       // Jamais de données personnelles dans les logs : seulement le type d'erreur.
       console.error('api_error', err?.name, err?.message)

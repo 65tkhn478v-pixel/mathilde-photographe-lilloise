@@ -103,11 +103,10 @@ export function HistoryTab({ onExpired }) {
                   <ul className="mt-2 space-y-2 sm:mt-0">
                     {slot.bookings.map((b) => (
                       <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                        <StatusBadge state={b.status} feminine />
+                        <StatusBadge state={b.status} />
                         <span>
                           {b.first_name} {b.last_name} — {sessionLabel(b.session_type)}
                         </span>
-                        <span className="text-xs">Réf. {b.reference}</span>
                       </li>
                     ))}
                   </ul>

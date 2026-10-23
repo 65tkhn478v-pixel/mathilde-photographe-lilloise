@@ -36,13 +36,17 @@ const sql = [
   ...slots.map((s) => `INSERT INTO slots (start_at, end_at, closed, created_at) VALUES (${q(s.start)}, ${q(s.end)}, 0, ${q(nowIso)});`),
 ]
 
-const booking = (slotIndex, ref, type, status, message) =>
-  `INSERT INTO bookings (reference, slot_id, session_type, first_name, last_name, email, phone, message, consent_at, status, created_at, decided_at)
-   VALUES (${q(ref)}, ${slotIndex + 1}, ${q(type)}, 'Client', 'Test', 'client.test@example.com', '06 00 00 00 00', ${q(message)}, ${q(nowIso)}, ${q(status)}, ${q(nowIso)}, ${status === 'pending' ? 'NULL' : q(nowIso)});`
+const booking = (slotIndex, ref, type, status, message, instagram = null) =>
+  `INSERT INTO bookings (reference, slot_id, session_type, first_name, last_name, email, phone, instagram, message, consent_at, status, created_at, decided_at)
+   VALUES (${q(ref)}, ${slotIndex + 1}, ${q(type)}, 'Client', 'Test', 'client.test@example.com', '06 00 00 00 00', ${q(instagram)}, ${q(message)}, ${q(nowIso)}, ${q(status)}, ${q(nowIso)}, ${status === 'pending' ? 'NULL' : q(nowIso)});`
 
+// La référence reste une colonne interne (jamais affichée).
 sql.push(booking(0, 'HST2K', 'famille', 'confirmed', 'Demande de test (historique).'))
-sql.push(booking(1, 'TEST2', 'grossesse', 'pending', 'Demande de test : séance grossesse.'))
+sql.push(booking(1, 'TEST2', 'grossesse', 'pending', 'Demande de test : séance grossesse.', 'client.test'))
 sql.push(booking(3, 'TEST3', 'portrait', 'confirmed', null))
+sql.push(booking(5, 'TEST4', 'naissance', 'declined', 'Demande de test refusée.'))
+// Un créneau fermé.
+sql.push(`UPDATE slots SET closed = 1 WHERE id = ${slots.length};`)
 
 const dir = resolve(root, '.wrangler')
 mkdirSync(dir, { recursive: true })
@@ -50,4 +54,4 @@ const file = resolve(dir, 'seed-local.sql')
 writeFileSync(file, sql.join('\n'))
 
 execFileSync('npx', ['wrangler', 'd1', 'execute', 'DB', '--local', `--file=${file}`], { cwd: root, stdio: 'inherit' })
-console.log(`Seed local : ${slots.length} créneaux, 3 demandes « Client Test ».`)
+console.log(`Seed local : ${slots.length} créneaux (dont 1 fermé), 4 demandes « Client Test ».`)

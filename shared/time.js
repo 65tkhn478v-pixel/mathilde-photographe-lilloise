@@ -148,3 +148,24 @@ export function formatKeyShort(key) {
 export function formatKeyMedium(key) {
   return formatDateMedium(keyToDate(key))
 }
+
+const dayMonth = fmt({ day: 'numeric', month: 'long' })
+const monthYear = new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC', month: 'long', year: 'numeric' })
+
+/** "23 octobre" */
+export function formatDayMonth(value) {
+  return dayMonth.format(toDate(value))
+}
+
+/** "Octobre 2026" à partir de "2026-10". */
+export function formatMonthKey(month) {
+  const [y, m] = month.split('-').map(Number)
+  return capitalize(monthYear.format(new Date(Date.UTC(y, m - 1, 15))))
+}
+
+/** Mois "YYYY-MM" décalé de n mois. */
+export function addMonths(month, n) {
+  const [y, m] = month.split('-').map(Number)
+  const d = new Date(Date.UTC(y, m - 1 + n, 1))
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`
+}

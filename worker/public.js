@@ -11,11 +11,13 @@ import {
   REFERENCE_ALPHABET,
   REFERENCE_LENGTH,
   SESSION_TYPE_VALUES,
+  normalizeInstagram,
 } from '../shared/booking.js'
 import { availableSlots, isUniqueViolation } from './db.js'
 import { randomString } from './crypto.js'
 import { clientIp, error, json, readJson } from './http.js'
 import { hit, ipSubject, sweep } from './rateLimit.js'
+import { notifyNewBooking } from './notify.js'
 
 const SLOT_TAKEN = "Ce créneau vient d'être demandé par quelqu'un d'autre. Choisissez un autre horaire."
 
@@ -36,8 +38,12 @@ export function validateBooking(body) {
     last_name: str(body.last_name),
     email: str(body.email).toLowerCase(),
     phone: str(body.phone) || null,
+    instagram: null,
     message: str(body.message) || null,
   }
+  const instagram = normalizeInstagram(body.instagram)
+  if (instagram.error) errors.instagram = instagram.error
+  else data.instagram = instagram.value
 
   if (!Number.isInteger(data.slot_id) || data.slot_id < 1) errors.slot_id = 'Choisissez un créneau.'
   if (!SESSION_TYPE_VALUES.includes(data.session_type)) errors.session_type = 'Choisissez un type de séance.'
@@ -56,7 +62,7 @@ export function validateBooking(body) {
   return Object.keys(errors).length ? { errors } : { data }
 }
 
-export async function createBooking(request, env) {
+export async function createBooking(request, env, params, ctx) {
   const body = await readJson(request)
   if (!body) return error(422, 'Votre demande est incomplète. Vérifiez le formulaire.')
 
@@ -65,7 +71,7 @@ export async function createBooking(request, env) {
   // Champ piège : un humain ne le voit pas et ne le remplit jamais. On répond
   // comme si tout s'était bien passé, sans rien enregistrer.
   if (str(body.website)) {
-    return json({ reference: randomString(REFERENCE_ALPHABET, REFERENCE_LENGTH) }, 201)
+    return json({ ok: true }, 201)
   }
 
   if (errors) return error(422, 'Certaines informations sont à corriger.', { errors })
@@ -97,8 +103,8 @@ export async function createBooking(request, env) {
     try {
       await db
         .prepare(
-          `INSERT INTO bookings (reference, slot_id, session_type, first_name, last_name, email, phone, message, consent_at, status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
+          `INSERT INTO bookings (reference, slot_id, session_type, first_name, last_name, email, phone, instagram, message, consent_at, status, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
         )
         .bind(
           reference,
@@ -108,27 +114,29 @@ export async function createBooking(request, env) {
           data.last_name,
           data.email,
           data.phone,
+          data.instagram,
           data.message,
           nowIso,
           nowIso
         )
         .run()
-      return json(
-        {
-          reference,
-          booking: {
-            reference,
-            session_type: data.session_type,
-            first_name: data.first_name,
-            last_name: data.last_name,
-            email: data.email,
-            phone: data.phone,
-            message: data.message,
-            slot: { id: slot.id, start_at: slot.start_at, end_at: slot.end_at },
-          },
-        },
-        201
-      )
+      // La référence reste en base (usage interne) mais n'est plus exposée.
+      const booking = {
+        session_type: data.session_type,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone,
+        instagram: data.instagram,
+        message: data.message,
+        slot: { id: slot.id, start_at: slot.start_at, end_at: slot.end_at },
+      }
+      // Notification facultative de Mathilde : n'est envoyée que si le secret
+      // RESEND_API_KEY existe, et ne retarde jamais la réponse au client.
+      if (env.RESEND_API_KEY && ctx?.waitUntil) {
+        ctx.waitUntil(notifyNewBooking(env, booking, new URL('/espace-mathilde', request.url).toString()))
+      }
+      return json({ booking }, 201)
     } catch (err) {
       // Index unique partiel : une autre demande active existe déjà sur ce créneau.
       if (isUniqueViolation(err, 'bookings.slot_id')) return error(409, SLOT_TAKEN)

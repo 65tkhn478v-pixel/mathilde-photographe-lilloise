@@ -1,7 +1,7 @@
-import { sessionLabel } from '../../../shared/booking.js'
 import { formatDayFull, formatRange } from '../../../shared/time.js'
 import { Button } from '../Button'
 import { Notice } from '../ui/Notice'
+import { SessionReminder } from './SessionReminder'
 import { StepHeading } from './shared'
 
 function Row({ label, children, onEdit, editLabel }) {
@@ -32,9 +32,9 @@ export function StepSummary({ sessionType, slot, details, onEdit, onSubmit, subm
       <StepHeading focusOnMount={focusOnMount}>Récapitulatif</StepHeading>
 
       <dl className="mt-8 divide-y divide-line border-y border-line">
-        <Row label="Séance" onEdit={() => onEdit(1)} editLabel="la séance">
-          {sessionLabel(sessionType)}
-        </Row>
+        <div className="py-4">
+          <SessionReminder type={sessionType} onEdit={() => onEdit(1)} />
+        </div>
         <Row label="Date et horaire" onEdit={() => onEdit(2)} editLabel="le créneau">
           <span className="block first-letter:uppercase">{formatDayFull(slot.start_at)}</span>
           {formatRange(slot.start_at, slot.end_at)}
@@ -45,6 +45,12 @@ export function StepSummary({ sessionType, slot, details, onEdit, onSubmit, subm
           <span className="break-all">{details.email}</span>
           <br />
           {details.phone || <span className="italic">Téléphone non renseigné</span>}
+          {details.instagram && (
+            <>
+              <br />
+              Instagram : @{details.instagram}
+            </>
+          )}
         </Row>
         <Row label="Message" onEdit={() => onEdit(3)} editLabel="votre message">
           {details.message ? (

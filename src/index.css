@@ -57,6 +57,29 @@
   --color-accent-soft: #eadcc8; /* fond discret (sélection, encarts) */
   --color-structure: #b69d7f; /* structure secondaire — bordures/détails plus soutenus, décoratif */
 
+  /*
+    Palette de statut — UNIQUEMENT pour les états (badges, pastilles du
+    calendrier, écran de succès), jamais pour le décor ni les boutons
+    ordinaires. Teintes désaturées et chaudes, accordées à la palette café.
+    Contrastes calculés (WCAG) :
+      texte sur son fond   : confirmé 5.40, attente 5.14, refusé 5.18, fermé 4.60
+      texte sur #FAF4E8    : confirmé 6.14, attente 5.79, refusé 6.13
+    Les teintes "-line" (bordures des badges, filet gauche des cartes) sont
+    des repères visuels (< 3:1 sur le fond) : l'information est toujours
+    portée par la teinte foncée (texte, icône, pastilles du calendrier,
+    ≥ 5:1), l'icône et le libellé.
+  */
+  --color-confirmed: #4f6142; /* sauge foncé — texte, icône, pastille */
+  --color-confirmed-bg: #e4e8da;
+  --color-confirmed-line: #9baa8a;
+  --color-pending: #7a5a1e; /* ocre foncé */
+  --color-pending-bg: #f4e6c8;
+  --color-pending-line: #d4b27a;
+  --color-declined: #8a4a3c; /* terre cuite */
+  --color-declined-bg: #f2ded7;
+  --color-declined-line: #c99a8c;
+  --color-closed-bg: #efe9df;
+
   --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade-in: fade-in 0.6s ease-out both;
 

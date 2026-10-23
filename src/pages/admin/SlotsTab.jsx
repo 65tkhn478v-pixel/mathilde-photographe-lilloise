@@ -17,6 +17,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { FieldError, Loading, Notice } from '../../components/ui/Notice'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { adminButton, apiErrorMessage, inputClasses, labelClasses } from './adminUi'
+import { sessionLabel } from '../../../shared/booking.js'
 
 // Pas de 15 minutes sur toute la journée.
 const TIMES = Array.from({ length: 96 }, (_, i) => {
@@ -147,9 +148,9 @@ export function SlotsTab({ onExpired, onPendingCount }) {
   )
 }
 
-function QuickAdd({ onCreated, onExpired, defaultDate }) {
+export function QuickAdd({ onCreated, onExpired, defaultDate, initialOpen = false, compact = false, onClose }) {
   const id = useId()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(initialOpen)
   const [date, setDate] = useState(defaultDate)
   const [start, setStart] = useState('10:00')
   const [end, setEnd] = useState('12:00')
@@ -203,12 +204,24 @@ function QuickAdd({ onCreated, onExpired, defaultDate }) {
         <h2 id={`${id}-title`} className="text-xl text-ink">
           Ajouter un créneau
         </h2>
-        <button type="button" className={adminButton('quiet')} onClick={() => setOpen(false)}>
+        <button
+          type="button"
+          className={adminButton('quiet')}
+          onClick={() => {
+            setOpen(false)
+            onClose?.()
+          }}
+        >
           Fermer
         </button>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-[1.4fr_1fr_1fr_auto] sm:items-end">
-        <label className={clsx(labelClasses, 'col-span-2 sm:col-span-1')}>
+      <div
+        className={clsx(
+          'mt-4 grid grid-cols-2 gap-x-4 gap-y-5',
+          !compact && 'sm:grid-cols-[1.4fr_1fr_1fr_auto] sm:items-end'
+        )}
+      >
+        <label className={clsx(labelClasses, 'col-span-2', !compact && 'sm:col-span-1')}>
           Date
           <input
             type="date"
@@ -239,7 +252,7 @@ function QuickAdd({ onCreated, onExpired, defaultDate }) {
             ))}
           </select>
         </label>
-        <button type="submit" disabled={busy} className={adminButton('solid', 'col-span-2 sm:col-span-1')}>
+        <button type="submit" disabled={busy} className={adminButton('solid', clsx('col-span-2', !compact && 'sm:col-span-1'))}>
           {busy ? 'Ajout…' : 'Ajouter'}
         </button>
       </div>
@@ -354,6 +367,7 @@ function SlotItem({ slot, onChanged, onExpired }) {
       {slot.booking && (
         <p className="mt-2 text-sm break-words">
           {slot.booking.first_name} {slot.booking.last_name}
+          <span className="block text-xs italic">{sessionLabel(slot.booking.session_type)}</span>
         </p>
       )}
       {!past && (

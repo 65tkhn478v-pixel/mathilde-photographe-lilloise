@@ -42,3 +42,22 @@ export const REFERENCE_LENGTH = 5
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const PHONE_PATTERN = /^[0-9+().\s-]{6,25}$/
+
+// Instagram : pseudo seul, sans « @ », 30 caractères max (lettres, chiffres,
+// points, underscores). On accepte « @compte », « compte » ou une URL de profil.
+export const INSTAGRAM_MAX_LENGTH = 30
+const INSTAGRAM_PATTERN = /^[A-Za-z0-9._]{1,30}$/
+const INSTAGRAM_URL = /^(?:https?:\/\/)?(?:www\.|m\.)?(?:instagram\.com|instagr\.am)\/([^/?#]*)/i
+
+/** Renvoie { value } (pseudo normalisé ou null si vide) ou { error }. */
+export function normalizeInstagram(input) {
+  let v = typeof input === 'string' ? input.trim() : ''
+  if (!v) return { value: null }
+  const url = INSTAGRAM_URL.exec(v)
+  if (url) v = url[1]
+  v = v.replace(/^@+/, '').replace(/\/+$/, '')
+  if (!INSTAGRAM_PATTERN.test(v)) {
+    return { error: 'Ce compte Instagram ne semble pas valide (lettres, chiffres, points et _ uniquement, 30 caractères max).' }
+  }
+  return { value: v.toLowerCase() }
+}

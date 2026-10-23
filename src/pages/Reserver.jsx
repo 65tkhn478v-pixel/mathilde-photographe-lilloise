@@ -9,6 +9,7 @@ import {
   MESSAGE_MAX_LENGTH,
   PHONE_PATTERN,
   SESSION_TYPE_VALUES,
+  normalizeInstagram,
 } from '../../shared/booking.js'
 import { StepSession } from '../components/booking/StepSession'
 import { StepSlot } from '../components/booking/StepSlot'
@@ -23,6 +24,7 @@ const emptyDetails = {
   last_name: '',
   email: '',
   phone: '',
+  instagram: '',
   message: '',
   consent: false,
   website: '', // champ piège anti-robot
@@ -39,12 +41,14 @@ function validateDetails(d) {
     errors.email = 'Cette adresse mail ne semble pas valide (exemple : prenom@exemple.fr).'
   if (d.phone.trim() && !PHONE_PATTERN.test(d.phone.trim()))
     errors.phone = 'Ce numéro ne semble pas valide (chiffres, espaces et + uniquement).'
+  const instagram = normalizeInstagram(d.instagram)
+  if (instagram.error) errors.instagram = instagram.error
   if (d.message.length > MESSAGE_MAX_LENGTH) errors.message = `Votre message dépasse ${MESSAGE_MAX_LENGTH} caractères.`
   if (!d.consent) errors.consent = 'Merci de cocher la case pour que je puisse traiter votre demande.'
   return errors
 }
 
-const DETAIL_FIELDS = ['first_name', 'last_name', 'email', 'phone', 'message', 'consent']
+const DETAIL_FIELDS = ['first_name', 'last_name', 'email', 'phone', 'instagram', 'message', 'consent']
 
 export default function Reserver() {
   usePageMeta({
@@ -100,6 +104,8 @@ export default function Reserver() {
       document.getElementById(`field-${first}`)?.focus()
       return
     }
+    // Pseudo Instagram normalisé dès le récapitulatif (« @compte » → « compte »).
+    setDetails((d) => ({ ...d, instagram: normalizeInstagram(d.instagram).value ?? '' }))
     goTo(4)
   }
 
@@ -121,23 +127,14 @@ export default function Reserver() {
           last_name: details.last_name,
           email: details.email,
           phone: details.phone,
+          instagram: details.instagram,
           message: details.message,
           consent: details.consent,
           website: details.website,
         },
       })
-      // Récapitulatif construit à partir de ce qui a été saisi (la réponse
-      // contient la référence ; elle est identique côté serveur).
-      setBooking({
-        reference: data.reference,
-        session_type: sessionType,
-        first_name: details.first_name.trim(),
-        last_name: details.last_name.trim(),
-        email: details.email.trim(),
-        phone: details.phone.trim() || null,
-        message: details.message.trim() || null,
-        slot,
-      })
+      // Récapitulatif construit à partir de ce qui a été choisi.
+      setBooking({ session_type: sessionType, slot: data.booking?.slot ?? slot })
       goTo('done')
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -212,6 +209,8 @@ export default function Reserver() {
             )}
             {step === 2 && (
               <StepSlot
+                sessionType={sessionType}
+                onEditSession={() => goTo(1)}
                 value={slot}
                 onChange={onSlotChange}
                 onNext={nextFromSlot}

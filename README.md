@@ -87,17 +87,42 @@ Elle recontacte chaque client et confirme elle-même.
   attente ») ; un refus ou une suppression le libère. Garanti en base par un
   index unique partiel (`migrations/0001_reservations.sql`), y compris en cas
   de requêtes simultanées.
-- **Aucun mail n'est envoyé par le serveur.** Après l'enregistrement, le
-  client clique sur « Prévenir Mathilde par mail » (lien `mailto:` pré-rempli
-  vers `CONTACT_EMAIL`, `src/data/site.js`). La base reste la source de vérité :
-  une demande enregistrée est visible dans l'espace admin même si ce mail
-  n'est jamais envoyé.
+- **Le client n'a rien d'autre à faire** une fois la demande envoyée : elle
+  est enregistrée et visible tout de suite dans l'espace admin. Mathilde
+  recontacte le client (mail, téléphone ou Instagram, champ facultatif).
 - **Espace admin** : `/espace-mathilde` (non lié depuis le site, `noindex`,
   exclu du sitemap et de robots.txt). La protection est le mot de passe, pas
-  l'URL. Onglets Demandes / Mes créneaux / Historique.
+  l'URL. Onglets Calendrier (vue mensuelle) / Demandes / Mes créneaux /
+  Historique.
+- **Statuts** : couleur dédiée + icône + libellé (`StatusBadge`), palette de
+  statut dans `src/index.css` (contrastes calculés en commentaire).
+- **Migrations** : `migrations/` est appliqué à la base de production à
+  chaque déploiement (`wrangler d1 migrations apply DB --remote`). Ne jamais
+  modifier une migration déjà appliquée : en ajouter une nouvelle, additive.
 - **Conservation des demandes** : 12 mois après la date de la séance
   (`RETENTION_MONTHS`, `shared/booking.js`), **durée à valider avec la
   cliente**. Purge manuelle depuis l'onglet Historique.
+
+### Notification de Mathilde par mail (facultative, désactivée par défaut)
+
+À chaque nouvelle demande, le Worker peut envoyer un mail court à
+`lecomtemathildeproo@gmail.com` via [Resend](https://resend.com)
+(`worker/notify.js`). Tant que le secret `RESEND_API_KEY` n'existe pas, rien
+n'est envoyé et rien ne change. L'envoi ne retarde jamais la réponse au
+client et un échec n'empêche jamais l'enregistrement de la demande.
+
+Sans domaine vérifié, Resend n'autorise l'expéditeur `onboarding@resend.dev`
+que vers l'adresse du compte Resend lui-même. Pour activer :
+
+1. Créer un compte Resend **avec l'adresse `lecomtemathildeproo@gmail.com`**.
+2. Dans Resend, créer une clé API (permission « Sending access »).
+3. Dans Cloudflare : Workers & Pages → le Worker → Settings → Variables and
+   Secrets → ajouter un **Secret** `RESEND_API_KEY` avec cette clé (ou
+   `npx wrangler secret put RESEND_API_KEY`).
+4. Faire une demande test sur `/reserver` et vérifier la réception (et les
+   indésirables).
+
+Aucune déclaration n'est nécessaire dans `wrangler.jsonc`.
 
 ### Architecture
 
@@ -109,6 +134,7 @@ worker/          API du Worker Cloudflare (/api/*), routeur maison
   auth.js          cookie de session signé HMAC-SHA256 (7 jours)
   crypto.js        PBKDF2, HMAC, comparaison en temps constant
   rateLimit.js     anti-bruteforce et anti-abus (IP hachée, jamais stockée en clair)
+  notify.js        notification facultative de Mathilde (Resend)
 shared/          code commun Worker + site : règles de réservation, dates Europe/Paris
 migrations/      schéma D1 (slots, bookings, rate_limits)
 scripts/         mot de passe admin, seed local, lancement dev

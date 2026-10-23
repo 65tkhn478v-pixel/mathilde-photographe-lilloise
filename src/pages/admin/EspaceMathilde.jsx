@@ -9,9 +9,13 @@ import { adminButton } from './adminUi'
 import { AdminLogin } from './AdminLogin'
 import { BookingsTab } from './BookingsTab'
 import { SlotsTab } from './SlotsTab'
+import { CalendarTab } from './CalendarTab'
+import { Toast } from './Toast'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { HistoryTab } from './HistoryTab'
 
 const TABS = [
+  { value: 'calendrier', label: 'Calendrier' },
   { value: 'demandes', label: 'Demandes' },
   { value: 'creneaux', label: 'Mes créneaux' },
   { value: 'historique', label: 'Historique' },
@@ -30,7 +34,6 @@ function readStoredTab() {
 function useNoIndex() {
   useEffect(() => {
     const previousTitle = document.title
-    document.title = 'Espace Mathilde'
     const meta = document.createElement('meta')
     meta.name = 'robots'
     meta.content = 'noindex, nofollow'
@@ -53,6 +56,14 @@ export default function EspaceMathilde() {
   const [expired, setExpired] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [tab, setTab] = useState(readStoredTab)
+  const [toast, setToast] = useState(null)
+  const onFeedback = useCallback((feedback) => setToast({ ...feedback, id: Date.now() }), [])
+  const clearToast = useCallback(() => setToast(null), [])
+
+  // Titre de l'onglet du navigateur : « (1) Espace Mathilde ».
+  useEffect(() => {
+    document.title = pendingCount > 0 ? `(${pendingCount}) Espace Mathilde` : 'Espace Mathilde'
+  }, [pendingCount])
 
   const changeTab = (value) => {
     setTab(value)
@@ -67,7 +78,7 @@ export default function EspaceMathilde() {
     onData: (data) => {
       setPendingCount(data.pending_count)
       // Onglet par défaut : les demandes s'il y en a en attente.
-      setTab((current) => current ?? (data.pending_count > 0 ? 'demandes' : 'creneaux'))
+      setTab((current) => current ?? (data.pending_count > 0 ? 'demandes' : 'calendrier'))
     },
   })
   const checkSession = session.reload
@@ -130,7 +141,7 @@ export default function EspaceMathilde() {
     )
   }
 
-  const shared = { onExpired, onPendingCount: setPendingCount }
+  const shared = { onExpired, onPendingCount: setPendingCount, onFeedback }
 
   return (
     <Shell
@@ -138,12 +149,11 @@ export default function EspaceMathilde() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <p className="text-sm text-ink" aria-live="polite">
             {pendingCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => changeTab('demandes')}
-                className="font-label rounded-sm bg-ink px-2.5 py-1 text-xs tracking-[0.12em] text-paper uppercase"
-              >
-                {pendingCount} en attente
+              <button type="button" onClick={() => changeTab('demandes')} className="rounded-full">
+                <StatusBadge state="pending" className="py-1">
+                  {pendingCount} en attente
+                </StatusBadge>
+                <span className="sr-only"> : voir les demandes</span>
               </button>
             ) : (
               <span className="italic">Aucune demande en attente</span>
@@ -155,7 +165,7 @@ export default function EspaceMathilde() {
         </div>
       }
     >
-      <Tabs.Root value={tab ?? 'creneaux'} onValueChange={changeTab}>
+      <Tabs.Root value={tab ?? 'calendrier'} onValueChange={changeTab}>
         <Tabs.List
           aria-label="Sections de l'espace"
           className="flex gap-1 overflow-x-auto border-b border-line"
@@ -171,7 +181,7 @@ export default function EspaceMathilde() {
             >
               {t.label}
               {t.value === 'demandes' && pendingCount > 0 && (
-                <span className="ml-2 rounded-full bg-ink px-1.5 text-[0.7rem] text-paper">
+                <span className="ml-2 rounded-full border border-pending-line bg-pending-bg px-1.5 text-[0.7rem] text-pending">
                   {pendingCount}
                   <span className="sr-only"> en attente</span>
                 </span>
@@ -179,6 +189,9 @@ export default function EspaceMathilde() {
             </Tabs.Trigger>
           ))}
         </Tabs.List>
+        <Tabs.Content value="calendrier" className="pt-6 focus-visible:outline-none">
+          <CalendarTab {...shared} />
+        </Tabs.Content>
         <Tabs.Content value="demandes" className="pt-6 focus-visible:outline-none">
           <BookingsTab {...shared} />
         </Tabs.Content>
@@ -189,6 +202,7 @@ export default function EspaceMathilde() {
           <HistoryTab {...shared} />
         </Tabs.Content>
       </Tabs.Root>
+      <Toast toast={toast} onDone={clearToast} />
     </Shell>
   )
 }

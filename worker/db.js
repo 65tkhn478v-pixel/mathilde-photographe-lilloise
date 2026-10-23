@@ -5,8 +5,9 @@ export const ACTIVE = "('pending', 'confirmed')"
 
 const SLOT_WITH_ACTIVE_BOOKING = `
   SELECT s.id, s.start_at, s.end_at, s.closed,
-         b.id AS booking_id, b.status AS booking_status, b.reference,
-         b.session_type, b.first_name, b.last_name
+         b.id AS booking_id, b.status AS booking_status,
+         b.session_type, b.first_name, b.last_name, b.email, b.phone, b.instagram,
+         b.message, b.created_at AS booking_created_at
   FROM slots s
   LEFT JOIN bookings b ON b.slot_id = s.id AND b.status IN ${ACTIVE}`
 
@@ -29,10 +30,15 @@ export function serializeAdminSlot(row, nowIso) {
       ? {
           id: row.booking_id,
           status: row.booking_status,
-          reference: row.reference,
           session_type: row.session_type,
           first_name: row.first_name,
           last_name: row.last_name,
+          email: row.email,
+          phone: row.phone,
+          instagram: row.instagram,
+          message: row.message,
+          created_at: row.booking_created_at,
+          slot: { id: row.id, start_at: row.start_at, end_at: row.end_at },
         }
       : null,
   }
@@ -74,19 +80,19 @@ export async function overlapping(db, startIso, endIso) {
 }
 
 const BOOKING_COLUMNS = `
-  b.id, b.reference, b.session_type, b.first_name, b.last_name, b.email, b.phone,
+  b.id, b.session_type, b.first_name, b.last_name, b.email, b.phone, b.instagram,
   b.message, b.status, b.created_at, b.decided_at,
   s.id AS slot_id, s.start_at, s.end_at`
 
 export function serializeBooking(row) {
   return {
     id: row.id,
-    reference: row.reference,
     session_type: row.session_type,
     first_name: row.first_name,
     last_name: row.last_name,
     email: row.email,
     phone: row.phone,
+    instagram: row.instagram,
     message: row.message,
     status: row.status,
     created_at: row.created_at,

@@ -2,7 +2,7 @@
 // (vérifiée dans worker/index.js).
 
 import { LOGIN_MAX_FAILURES, LOGIN_WINDOW_MINUTES, RETENTION_MONTHS } from '../shared/booking.js'
-import { addDays, zonedToUtc, dateKey, timeKey } from '../shared/time.js'
+import { addDays, zonedToUtc, dateKey, timeKey, weekStart } from '../shared/time.js'
 import { clearSessionCookie, createSessionCookie } from './auth.js'
 import { verifyPassword } from './crypto.js'
 import {
@@ -72,6 +72,34 @@ export async function listSlots(request, env) {
   const nowIso = new Date().toISOString()
   const rows = await adminSlotsBetween(env.DB, new Date(from).toISOString(), new Date(to).toISOString())
   return json({ slots: rows.map((r) => serializeAdminSlot(r, nowIso)), pending_count: await pendingCount(env.DB) })
+}
+
+/**
+ * Vue mensuelle : créneaux du mois et des semaines visibles avant / après
+ * (grille du lundi au dimanche), découpés en jours de Paris, avec leur
+ * demande active éventuelle. Un seul appel par mois affiché.
+ */
+export async function calendar(request, env) {
+  const month = new URL(request.url).searchParams.get('month') ?? ''
+  const m = /^(\d{4})-(\d{2})$/.exec(month)
+  if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return error(422, 'Mois invalide.')
+  const first = `${month}-01`
+  const nextMonth = Number(m[2]) === 12 ? `${Number(m[1]) + 1}-01-01` : `${m[1]}-${String(Number(m[2]) + 1).padStart(2, '0')}-01`
+  const gridStart = weekStart(first)
+  const gridEnd = addDays(weekStart(addDays(nextMonth, -1)), 7)
+  const nowIso = new Date().toISOString()
+  const rows = await adminSlotsBetween(
+    env.DB,
+    zonedToUtc(gridStart, '00:00').toISOString(),
+    zonedToUtc(gridEnd, '00:00').toISOString()
+  )
+  return json({
+    month,
+    grid_start: gridStart,
+    grid_end: gridEnd,
+    slots: rows.map((r) => serializeAdminSlot(r, nowIso)),
+    pending_count: await pendingCount(env.DB),
+  })
 }
 
 /** Convertit { date, start, end } (heure de Paris) en instants UTC validés. */
