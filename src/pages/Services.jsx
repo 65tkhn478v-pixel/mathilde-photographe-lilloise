@@ -59,8 +59,8 @@ export default function Services() {
 
       <Reveal className="mx-auto max-w-6xl px-6 md:px-10">
         <img
-          src="/images/services/nouveau-ne-bras-pere.webp"
-          alt="Un nouveau-né endormi dans les bras de son père, porté tout contre lui."
+          src="/images/portfolio/naissance/naissance-05.webp"
+          alt="Photo en noir et blanc d'un nouveau-né endormi, emmailloté dans un vêtement blanc, la tête posée au creux de la main d'un adulte."
           className="aspect-[16/7] w-full object-cover"
           loading="lazy"
           decoding="async"

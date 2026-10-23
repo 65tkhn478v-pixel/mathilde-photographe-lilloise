@@ -3,4 +3,4 @@ Allow: /
 Disallow: /espace-mathilde
 Disallow: /api/
 
-Sitemap: https://www.mathilde-lecomte-photographe.fr/sitemap.xml
+Sitemap: https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/sitemap.xml

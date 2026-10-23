@@ -17,9 +17,7 @@
     {
       "binding": "DB",
       "database_name": "mathilde-reservations",
-      // ID provisoire : à remplacer après `wrangler d1 create mathilde-reservations`
-      // (non exécuté — voir README, section Réservation > Mise en production).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "81e5a685-02af-4b84-9aa3-0ee7a84395e0",
       "migrations_dir": "migrations"
     }
   ]

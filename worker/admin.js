@@ -26,7 +26,7 @@ const NOT_FOUND = 'Élément introuvable. Il a peut-être déjà été supprimé
 
 export async function login(request, env) {
   if (!env.ADMIN_PASSWORD_HASH || !env.SESSION_SECRET) {
-    return error(503, "L'espace n'est pas encore configuré.")
+    return error(503, 'Espace non configuré : le mot de passe administrateur n’a pas encore été défini.')
   }
   const db = env.DB
   const now = new Date()

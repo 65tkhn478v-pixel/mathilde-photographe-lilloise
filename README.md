@@ -40,10 +40,10 @@ npm run lint    # oxlint
   (`CONTACT_EMAIL`). À remplacer par un vrai envoi serveur (ex. Cloudflare
   Worker + Email Routing, ou un service comme Formspree) une fois
   l'hébergement choisi, pour plus de fiabilité.
-- **Nom de domaine** : un domaine provisoire
-  (`www.mathilde-lecomte-photographe.fr`) est utilisé dans les balises SEO
+- **Nom de domaine** : aucun. Le site est servi sur
+  `https://mathilde-photographe-lilloise.h9759k6njr.workers.dev`, URL utilisée dans les balises SEO
   (`index.html`, `public/sitemap.xml`, `public/robots.txt`,
-  `src/data/site.js`). À remplacer partout une fois le vrai domaine acheté.
+  `src/data/site.js`).
 - **Mentions légales** : statut juridique, SIRET, adresse précise et
   informations d'hébergement sont marqués « à compléter »
   (`src/pages/MentionsLegales.jsx`) — informations non communiquées par la
@@ -147,8 +147,8 @@ Le mot de passe en clair n'est écrit nulle part. Pour le changer, relancer
 
 1. Créer la base distante :
    `npx wrangler d1 create mathilde-reservations`
-2. Remplacer le `database_id` provisoire de `wrangler.jsonc` par l'identifiant
-   affiché.
+2. Reporter l'identifiant affiché dans le `database_id` de `wrangler.jsonc`
+   (fait : base `mathilde-reservations` du compte de production).
 3. Appliquer les migrations sur la base distante :
    `npx wrangler d1 migrations apply DB --remote`
 4. Définir les secrets (valeurs de `.dev.vars`, ou nouvelles valeurs générées
@@ -159,7 +159,7 @@ Le mot de passe en clair n'est écrit nulle part. Pour le changer, relancer
 6. Si le déploiement crée une version sans la promouvoir (déploiements
    progressifs / Workers Builds), promouvoir la version dans le dashboard
    Cloudflare (Workers & Pages → le Worker → Deployments).
-7. Vérifier sur `https://mathilde-photographe-lilloise.65tkhn478v.workers.dev` :
+7. Vérifier sur `https://mathilde-photographe-lilloise.h9759k6njr.workers.dev` :
    connexion à `/espace-mathilde`, publication d'un créneau, demande test sur
    `/reserver`, puis suppression de cette demande test.
 
