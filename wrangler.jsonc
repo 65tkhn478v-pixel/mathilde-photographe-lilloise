@@ -2,8 +2,25 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mathilde-photographe-lilloise",
   "compatibility_date": "2026-08-01",
+  // Le Worker ne traite que l'API (/api/*) ; tout le reste (site React) est
+  // servi tel quel depuis dist/ par les static assets.
+  "main": "worker/index.js",
+  "build": {
+    "command": "npm run build"
+  },
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mathilde-reservations",
+      // ID provisoire : à remplacer après `wrangler d1 create mathilde-reservations`
+      // (non exécuté — voir README, section Réservation > Mise en production).
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
 }

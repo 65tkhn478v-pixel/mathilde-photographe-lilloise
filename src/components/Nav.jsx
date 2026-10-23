@@ -4,7 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { AnimatePresence, motion } from 'framer-motion'
 import clsx from 'clsx'
-import { NAV_LINKS, SITE_NAME } from '../data/site'
+import { BOOKING_LINK, NAV_LINKS, SITE_NAME } from '../data/site'
 
 export function Nav() {
   const location = useLocation()
@@ -65,6 +65,22 @@ export function Nav() {
                 </NavLink>
               </li>
             ))}
+            <li>
+              <NavLink
+                to={BOOKING_LINK.to}
+                className={({ isActive }) =>
+                  clsx(
+                    'rounded-sm border px-4 py-2 transition-colors duration-200',
+                    transparent
+                      ? 'border-paper/70 text-paper hover:border-paper'
+                      : 'border-ink/40 text-ink hover:border-ink',
+                    isActive && (transparent ? 'border-paper' : 'border-ink')
+                  )
+                }
+              >
+                {BOOKING_LINK.label}
+              </NavLink>
+            </li>
           </ul>
         </nav>
 
@@ -137,6 +153,12 @@ export function Nav() {
                           {link.label}
                         </NavLink>
                       ))}
+                      <NavLink
+                        to={BOOKING_LINK.to}
+                        className="font-label rounded-sm border border-ink/40 px-6 py-2 text-3xl text-ink"
+                      >
+                        {BOOKING_LINK.label}
+                      </NavLink>
                     </nav>
                   </motion.div>
                 </Dialog.Content>

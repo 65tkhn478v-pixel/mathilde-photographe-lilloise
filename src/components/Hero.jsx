@@ -47,7 +47,10 @@ export function Hero() {
           transition={{ duration: 0.8, delay: 0.55 }}
           className="mt-9 flex flex-wrap justify-center gap-4"
         >
-          <Button to="/contact" variant="inverse">
+          <Button to="/reserver" variant="inverse">
+            Réserver une séance
+          </Button>
+          <Button to="/contact" variant="ghost">
             Me contacter
           </Button>
           <Button to="/portfolio" variant="ghost">

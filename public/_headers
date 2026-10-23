@@ -1,0 +1,6 @@
+# En-têtes des fichiers statiques (Cloudflare Workers Static Assets).
+# Espace admin : jamais indexé, même si l'URL fuitait.
+/espace-mathilde
+  X-Robots-Tag: noindex, nofollow
+/espace-mathilde/*
+  X-Robots-Tag: noindex, nofollow

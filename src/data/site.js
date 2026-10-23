@@ -46,6 +46,9 @@ export const NAV_LINKS = [
   { label: 'Contact', to: '/contact' },
 ]
 
+// Lien de réservation (/reserver), mis en avant à part dans la navigation.
+export const BOOKING_LINK = { label: 'Réserver', to: '/reserver' }
+
 // Types de séance du formulaire de contact — grossesse / mariage / portrait
 // / naissance repris tels quels du formulaire existant, "famille" ajouté
 // explicitement comme demandé par le brief (mentionné dans le discours de

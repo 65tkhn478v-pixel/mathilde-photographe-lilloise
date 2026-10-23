@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /espace-mathilde
+Disallow: /api/
 
 Sitemap: https://www.mathilde-lecomte-photographe.fr/sitemap.xml

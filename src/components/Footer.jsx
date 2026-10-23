@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { LOCATION, NAV_LINKS, SOCIALS } from '../data/site'
+import { BOOKING_LINK, LOCATION, NAV_LINKS, SOCIALS } from '../data/site'
 import { InstagramIcon, PinterestIcon, TikTokIcon } from './SocialIcons'
 
 const SOCIAL_ICONS = {
@@ -31,6 +31,11 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link to={BOOKING_LINK.to} className="text-ink-soft hover:text-accent">
+                  {BOOKING_LINK.label}
+                </Link>
+              </li>
               <li>
                 <Link to="/mentions-legales" className="text-ink-soft hover:text-accent">
                   Mentions légales

@@ -25,3 +25,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets locaux du Worker (mot de passe admin, secret de session)
+.dev.vars
+.dev.vars.*

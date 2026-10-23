@@ -27,9 +27,10 @@ function setCanonical(href) {
  * Open Graph pour la page courante (le site est une SPA React + Vite, sans
  * rendu serveur — voir README pour les limites SEO que ça implique).
  */
-export function usePageMeta({ title, description, path = '/', image }) {
+export function usePageMeta({ title, fullTitle: exactTitle, description, path = '/', image }) {
   useEffect(() => {
-    const fullTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME
+    // `fullTitle` : titre exact, sans le suffixe du nom du site.
+    const fullTitle = exactTitle ?? (title ? `${title} — ${SITE_NAME}` : SITE_NAME)
     document.title = fullTitle
 
     setMeta('description', description)
@@ -39,5 +40,5 @@ export function usePageMeta({ title, description, path = '/', image }) {
     if (image) setMeta('og:image', `${SITE_URL}${image}`, 'property')
 
     setCanonical(`${SITE_URL}${path}`)
-  }, [title, description, path, image])
+  }, [title, exactTitle, description, path, image])
 }

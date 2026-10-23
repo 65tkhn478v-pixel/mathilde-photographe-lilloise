@@ -73,3 +73,95 @@ public/
   images/       photos réelles (placeholders, voir ci-dessus)
   robots.txt, sitemap.xml
 ```
+
+## Réservation
+
+Mathilde publie à l'avance ses créneaux depuis un espace privé ; les clients
+demandent l'un de ces créneaux sur `/reserver`, puis la préviennent par mail.
+Elle recontacte chaque client et confirme elle-même.
+
+- **Séances réservables en ligne** : portrait, famille, grossesse, naissance
+  (`shared/booking.js`). Mariage et projets plus importants : formulaire de
+  contact.
+- **1 créneau = 1 demande active.** Une demande bloque le créneau (« en
+  attente ») ; un refus ou une suppression le libère. Garanti en base par un
+  index unique partiel (`migrations/0001_reservations.sql`), y compris en cas
+  de requêtes simultanées.
+- **Aucun mail n'est envoyé par le serveur.** Après l'enregistrement, le
+  client clique sur « Prévenir Mathilde par mail » (lien `mailto:` pré-rempli
+  vers `CONTACT_EMAIL`, `src/data/site.js`). La base reste la source de vérité :
+  une demande enregistrée est visible dans l'espace admin même si ce mail
+  n'est jamais envoyé.
+- **Espace admin** : `/espace-mathilde` (non lié depuis le site, `noindex`,
+  exclu du sitemap et de robots.txt). La protection est le mot de passe, pas
+  l'URL. Onglets Demandes / Mes créneaux / Historique.
+- **Conservation des demandes** : 12 mois après la date de la séance
+  (`RETENTION_MONTHS`, `shared/booking.js`), **durée à valider avec la
+  cliente**. Purge manuelle depuis l'onglet Historique.
+
+### Architecture
+
+```
+worker/          API du Worker Cloudflare (/api/*), routeur maison
+  index.js         routes, session obligatoire sur /api/admin/*, contrôle Origin
+  public.js        GET /api/slots, POST /api/bookings
+  admin.js         connexion, créneaux, demandes, historique, purge
+  auth.js          cookie de session signé HMAC-SHA256 (7 jours)
+  crypto.js        PBKDF2, HMAC, comparaison en temps constant
+  rateLimit.js     anti-bruteforce et anti-abus (IP hachée, jamais stockée en clair)
+shared/          code commun Worker + site : règles de réservation, dates Europe/Paris
+migrations/      schéma D1 (slots, bookings, rate_limits)
+scripts/         mot de passe admin, seed local, lancement dev
+src/pages/Reserver.jsx, src/components/booking/   parcours client (4 étapes)
+src/pages/admin/                                  espace admin
+```
+
+`wrangler.jsonc` : `main` pointe vers `worker/index.js` et
+`assets.run_worker_first: ["/api/*"]` limite le Worker à l'API ; le reste du
+site est servi en statique depuis `dist/` (`not_found_handling` en mode SPA).
+
+### En local
+
+```bash
+npm install
+npm run db:migrate:local      # crée les tables dans la base D1 locale (.wrangler/)
+npm run admin:set-password    # mot de passe admin (saisie masquée) → .dev.vars
+npm run db:seed:local         # facultatif : créneaux fictifs sur 2 semaines, « Client Test »
+npm run dev:full              # Worker + D1 (port 8787) et Vite (port 5173)
+```
+
+Ouvrir http://localhost:5173/reserver et http://localhost:5173/espace-mathilde.
+Vite redirige `/api` vers `wrangler dev` (`vite.config.js`). Au démarrage,
+`wrangler dev` exécute `npm run build` pour servir `dist/` ; c'est normal.
+
+`npm run db:seed:local` **vide** les tables locales avant d'insérer ses
+données de test. Il n'agit que sur la base locale et n'est pas une migration.
+
+`.dev.vars` (mot de passe haché + secret de session) est ignoré par git.
+Le mot de passe en clair n'est écrit nulle part. Pour le changer, relancer
+`npm run admin:set-password` puis redémarrer `npm run dev:full`.
+
+### Mise en production (étapes NON exécutées)
+
+À faire par la personne qui gère le compte Cloudflare, dans cet ordre :
+
+1. Créer la base distante :
+   `npx wrangler d1 create mathilde-reservations`
+2. Remplacer le `database_id` provisoire de `wrangler.jsonc` par l'identifiant
+   affiché.
+3. Appliquer les migrations sur la base distante :
+   `npx wrangler d1 migrations apply DB --remote`
+4. Définir les secrets (valeurs de `.dev.vars`, ou nouvelles valeurs générées
+   avec `npm run admin:set-password`) :
+   `npx wrangler secret put ADMIN_PASSWORD_HASH`
+   `npx wrangler secret put SESSION_SECRET`
+5. Déployer : `npx wrangler deploy` (ou via le build Git connecté).
+6. Si le déploiement crée une version sans la promouvoir (déploiements
+   progressifs / Workers Builds), promouvoir la version dans le dashboard
+   Cloudflare (Workers & Pages → le Worker → Deployments).
+7. Vérifier sur `https://mathilde-photographe-lilloise.65tkhn478v.workers.dev` :
+   connexion à `/espace-mathilde`, publication d'un créneau, demande test sur
+   `/reserver`, puis suppression de cette demande test.
+
+Tout fonctionne sur `workers.dev` : aucun domaine, aucun service d'envoi de
+mail ni Cloudflare Access n'est nécessaire.

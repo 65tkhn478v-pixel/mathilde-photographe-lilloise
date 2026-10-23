@@ -1,4 +1,5 @@
 import { usePageMeta } from '../hooks/usePageMeta'
+import { Link } from 'react-router-dom'
 import { Reveal } from '../components/Reveal'
 import { ContactForm } from '../components/ContactForm'
 import { SOCIALS } from '../data/site'
@@ -14,6 +15,13 @@ export default function Contact() {
   return (
     <div className="pt-28 md:pt-32">
       <div className="mx-auto max-w-2xl px-6 py-16 md:px-10 md:py-24">
+        <p className="mb-12 border-l-2 border-structure py-1 pl-5 text-ink">
+          Pour une séance portrait, famille, grossesse ou naissance, vous pouvez directement{' '}
+          <Link to="/reserver" className="underline underline-offset-4 hover:text-accent">
+            choisir un créneau
+          </Link>
+          .
+        </p>
         <Reveal className="text-center">
           <p className="font-label text-xs tracking-[0.3em] text-accent uppercase">Contact</p>
           <h1 className="mt-4 text-4xl text-ink md:text-5xl">Contactez-moi</h1>

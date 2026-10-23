@@ -1,5 +1,7 @@
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Reveal } from '../components/Reveal'
+import { CONTACT_EMAIL } from '../data/site'
+import { RETENTION_MONTHS } from '../../shared/booking.js'
 
 export default function MentionsLegales() {
   usePageMeta({
@@ -54,12 +56,34 @@ export default function MentionsLegales() {
               </p>
             </section>
 
-            <section>
+            <section id="donnees-personnelles" className="scroll-mt-32">
               <h2 className="font-display text-xl text-ink">Données personnelles</h2>
               <p className="mt-2">
-                Les informations transmises via le formulaire de contact sont utilisées
-                uniquement pour répondre à votre message et ne sont ni cédées ni utilisées à
-                d'autres fins.
+                <strong className="font-normal italic">Données collectées.</strong> Via la
+                réservation en ligne et le formulaire de contact : votre identité (nom, prénom),
+                votre adresse mail, votre numéro de téléphone si vous le donnez, votre message et
+                le créneau demandé.
+              </p>
+              <p className="mt-2">
+                <strong className="font-normal italic">Finalité.</strong> Traiter votre demande
+                de séance et vous recontacter.
+              </p>
+              <p className="mt-2">
+                <strong className="font-normal italic">Destinataire.</strong> Mathilde Lecomte
+                uniquement. Ces informations ne sont ni cédées ni utilisées à d'autres fins.
+              </p>
+              <p className="mt-2">
+                {/* Durée à valider avec la cliente (constante RETENTION_MONTHS, shared/booking.js). */}
+                <strong className="font-normal italic">Conservation.</strong> {RETENTION_MONTHS}{' '}
+                mois après la date de la séance demandée.
+              </p>
+              <p className="mt-2">
+                <strong className="font-normal italic">Vos droits.</strong> Vous pouvez demander
+                l'accès à vos données, leur rectification ou leur effacement en écrivant à{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="break-all underline hover:text-accent">
+                  {CONTACT_EMAIL}
+                </a>
+                .
               </p>
             </section>
           </div>

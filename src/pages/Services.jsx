@@ -1,22 +1,28 @@
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Reveal } from '../components/Reveal'
+import { Link } from 'react-router-dom'
 import { Button } from '../components/Button'
 
 const SERVICES = [
   {
     title: 'Grossesse',
+    action: { label: 'Réserver cette séance', to: '/reserver?seance=grossesse' },
     text: "Un moment suspendu pour garder la trace de l'attente, en douceur, seule ou accompagnée.",
   },
   {
     title: 'Naissance',
+    action: { label: 'Réserver cette séance', to: '/reserver?seance=naissance' },
     text: 'Les tout premiers jours de votre enfant, à la maison ou à la maternité, dans la lumière du quotidien.',
   },
   {
     title: 'Mariage',
+    // Pas de réservation en ligne pour un mariage : on en parle d'abord.
+    action: { label: 'Me contacter', to: '/contact' },
     text: "Votre journée racontée telle qu'elle se vit vraiment : rires, émotion, complicité — sans mise en scène.",
   },
   {
     title: 'Famille',
+    action: { label: 'Réserver cette séance', to: '/reserver?seance=famille' },
     text: 'Des instants du quotidien ou une séance dédiée, pour fixer ce qui vous lie.',
   },
   {
@@ -25,6 +31,7 @@ const SERVICES = [
   },
   {
     title: 'Portrait individuel',
+    action: { label: 'Réserver cette séance', to: '/reserver?seance=portrait' },
     text: 'Un portrait sincère, qui vous ressemble, loin des poses figées.',
   },
 ]
@@ -66,6 +73,16 @@ export default function Services() {
             <Reveal key={service.title} delay={(index % 2) * 0.1}>
               <p className="font-display text-2xl text-ink">{service.title}</p>
               <p className="mt-3 text-ink-soft">{service.text}</p>
+              {service.action && (
+                <Link
+                  to={service.action.to}
+                  className="font-label mt-3 inline-flex min-h-11 items-center gap-2 text-xs tracking-[0.2em] text-ink uppercase hover:text-accent"
+                >
+                  <span className="underline underline-offset-[0.4em]">{service.action.label}</span>
+                  <span className="sr-only"> : {service.title.toLowerCase()}</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+              )}
             </Reveal>
           ))}
         </div>
