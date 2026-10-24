@@ -67,7 +67,7 @@ export function Footer() {
           </div>
         </div>
 
-        <p className="mt-16 text-xs text-ink-faint">
+        <p className="mt-16 text-sm text-ink-faint">
           © {new Date().getFullYear()} Mathilde Lecomte. Tous droits réservés.
         </p>
       </div>

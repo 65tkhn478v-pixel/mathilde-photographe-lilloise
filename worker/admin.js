@@ -1,8 +1,14 @@
 // API admin. Toutes les routes sauf /login exigent une session valide
 // (vérifiée dans worker/index.js).
 
-import { LOGIN_MAX_FAILURES, LOGIN_WINDOW_MINUTES, RETENTION_MONTHS } from '../shared/booking.js'
-import { addDays, zonedToUtc, dateKey, timeKey, weekStart } from '../shared/time.js'
+import {
+  DAY_START_TIMES,
+  LOGIN_MAX_FAILURES,
+  LOGIN_WINDOW_MINUTES,
+  RETENTION_MONTHS,
+  SLOT_DURATIONS,
+} from '../shared/booking.js'
+import { addDays, zonedToUtc, dateKey, formatRange, timeKey, weekStart } from '../shared/time.js'
 import { clearSessionCookie, createSessionCookie } from './auth.js'
 import { verifyPassword } from './crypto.js'
 import {
@@ -100,6 +106,115 @@ export async function calendar(request, env) {
     slots: rows.map((r) => serializeAdminSlot(r, nowIso)),
     pending_count: await pendingCount(env.DB),
   })
+}
+
+// ---- Jour (panneau de saisie rapide) ---------------------------------------
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+function dayBounds(date) {
+  const from = zonedToUtc(date, '00:00')
+  const to = zonedToUtc(addDays(date, 1), '00:00')
+  return from && to ? [from.toISOString(), to.toISOString()] : null
+}
+
+async function dayState(env, date, bounds) {
+  const nowIso = new Date().toISOString()
+  const rows = await adminSlotsBetween(env.DB, bounds[0], bounds[1])
+  return {
+    date,
+    slots: rows.map((r) => serializeAdminSlot(r, nowIso)),
+    pending_count: await pendingCount(env.DB),
+  }
+}
+
+export async function getDay(request, env, { date }) {
+  const bounds = DATE_PATTERN.test(date) && dayBounds(date)
+  if (!bounds) return error(422, 'Date invalide.')
+  return json(await dayState(env, date, bounds))
+}
+
+/**
+ * Remplace les créneaux d'un jour par la liste reçue (heure de Paris).
+ * Crée les nouveaux, supprime les créneaux retirés (jamais un créneau ayant
+ * une demande active), en une seule opération atomique.
+ */
+export async function putDay(request, env, { date }) {
+  const bounds = DATE_PATTERN.test(date) && dayBounds(date)
+  if (!bounds) return error(422, 'Date invalide.')
+  const now = new Date()
+  const nowIso = now.toISOString()
+  if (date < dateKey(now)) return error(422, 'Ce jour est passé : ses créneaux ne peuvent plus être modifiés.')
+
+  const body = await readJson(request)
+  const inputs = Array.isArray(body?.slots) ? body.slots : null
+  if (!inputs || inputs.length > 60) return error(422, 'Liste de créneaux invalide.')
+
+  const wanted = []
+  for (const input of inputs) {
+    const start = zonedToUtc(date, input?.start)
+    const end = zonedToUtc(date, input?.end)
+    if (!start || !end) {
+      return error(422, "Horaire invalide (cette heure n'existe pas ce jour-là, à cause du changement d'heure).")
+    }
+    if (end <= start) return error(422, "L'heure de fin doit être après l'heure de début.")
+    const key = `${start.toISOString()}|${end.toISOString()}`
+    if (!wanted.some((w) => w.key === key)) {
+      wanted.push({ key, start_at: start.toISOString(), end_at: end.toISOString(), startTime: input.start })
+    }
+  }
+
+  const db = env.DB
+  const existing = await adminSlotsBetween(db, bounds[0], bounds[1])
+  const keyOf = (s) => `${s.start_at}|${s.end_at}`
+  const kept = existing.filter((s) => wanted.some((w) => w.key === keyOf(s)))
+  const removed = existing.filter((s) => !kept.includes(s))
+  const created = wanted.filter((w) => !existing.some((s) => keyOf(s) === w.key))
+
+  const lockedRemoved = removed.filter((s) => s.booking_id)
+  if (lockedRemoved.length) {
+    const s = lockedRemoved[0]
+    return error(
+      409,
+      `Le créneau ${formatRange(s.start_at, s.end_at)} est réservé (${s.first_name}) : il ne peut pas être retiré ici. Gérez la demande dans l’onglet Demandes.`
+    )
+  }
+
+  for (const w of created) {
+    const minutes = (Date.parse(w.end_at) - Date.parse(w.start_at)) / 60_000
+    if (!DAY_START_TIMES.includes(w.startTime)) {
+      return error(422, 'Les nouveaux créneaux commencent entre 8h00 et 20h00, toutes les 30 minutes.')
+    }
+    if (!SLOT_DURATIONS.includes(minutes)) return error(422, 'Les nouveaux créneaux durent 1h ou 1h30.')
+    if (w.start_at <= nowIso) return error(422, `Le créneau de ${formatRange(w.start_at, w.end_at)} est déjà passé.`)
+  }
+
+  // Aucun chevauchement impliquant un nouveau créneau.
+  const final = [...kept.map((s) => ({ start_at: s.start_at, end_at: s.end_at })), ...created]
+  for (const w of created) {
+    const clash = final.find((o) => o !== w && o.start_at < w.end_at && o.end_at > w.start_at)
+    if (clash) {
+      return error(
+        422,
+        `Les créneaux ${formatRange(w.start_at, w.end_at)} et ${formatRange(clash.start_at, clash.end_at)} se chevauchent.`
+      )
+    }
+  }
+
+  const statements = [
+    // Garde-fou : si une demande arrive entre-temps, le créneau n'est pas supprimé.
+    ...removed.map((s) =>
+      db
+        .prepare(`DELETE FROM slots WHERE id = ? AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.slot_id = slots.id AND b.status IN ${ACTIVE})`)
+        .bind(s.id)
+    ),
+    ...created.map((w) =>
+      db.prepare('INSERT INTO slots (start_at, end_at, closed, created_at) VALUES (?, ?, 0, ?)').bind(w.start_at, w.end_at, nowIso)
+    ),
+  ]
+  if (statements.length) await db.batch(statements)
+
+  return json({ ...(await dayState(env, date, bounds)), created: created.length, deleted: removed.length })
 }
 
 /** Convertit { date, start, end } (heure de Paris) en instants UTC validés. */

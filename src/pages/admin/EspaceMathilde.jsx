@@ -141,7 +141,7 @@ export default function EspaceMathilde() {
     )
   }
 
-  const shared = { onExpired, onPendingCount: setPendingCount, onFeedback }
+  const shared = { onExpired, onPendingCount: setPendingCount, onFeedback, onGoToRequests: () => changeTab('demandes') }
 
   return (
     <Shell
@@ -181,7 +181,7 @@ export default function EspaceMathilde() {
             >
               {t.label}
               {t.value === 'demandes' && pendingCount > 0 && (
-                <span className="ml-2 rounded-full border border-pending-line bg-pending-bg px-1.5 text-[0.7rem] text-pending">
+                <span className="ml-2 rounded-full border border-pending-line bg-pending-bg px-1.5 text-xs text-pending">
                   {pendingCount}
                   <span className="sr-only"> en attente</span>
                 </span>
@@ -214,7 +214,7 @@ function Shell({ header, children }) {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-10">
           <div className="flex items-baseline gap-4">
             <h1 className="text-2xl text-ink">Espace Mathilde</h1>
-            <Link to="/" className="text-xs text-ink underline underline-offset-4 hover:no-underline">
+            <Link to="/" className="text-sm text-ink underline underline-offset-4 hover:no-underline">
               Voir le site
             </Link>
           </div>

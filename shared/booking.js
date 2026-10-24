@@ -61,3 +61,23 @@ export function normalizeInstagram(input) {
   }
   return { value: v.toLowerCase() }
 }
+
+// Saisie rapide des créneaux (panneau du jour de l'admin) : heures de début
+// de 8h00 à 20h00 toutes les 30 minutes, durée 1h ou 1h30.
+export const DAY_FIRST_START = '08:00'
+export const DAY_LAST_START = '20:00'
+export const DAY_STEP_MINUTES = 30
+export const SLOT_DURATIONS = [60, 90]
+
+const toMinutes = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+const fromMinutes = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+
+/** Les 25 heures de début proposées : "08:00", "08:30", … "20:00". */
+export const DAY_START_TIMES = Array.from(
+  { length: (toMinutes(DAY_LAST_START) - toMinutes(DAY_FIRST_START)) / DAY_STEP_MINUTES + 1 },
+  (_, i) => fromMinutes(toMinutes(DAY_FIRST_START) + i * DAY_STEP_MINUTES)
+)
+
+export function addMinutesToTime(time, minutes) {
+  return fromMinutes(toMinutes(time) + minutes)
+}

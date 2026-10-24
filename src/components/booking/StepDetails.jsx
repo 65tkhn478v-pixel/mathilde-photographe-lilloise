@@ -18,7 +18,7 @@ function Field({ name, label, required, hint, error, children }) {
       </label>
       {children({ id: `field-${name}`, 'aria-describedby': describedBy, 'aria-invalid': error ? 'true' : undefined })}
       {hint && (
-        <p id={`${name}-hint`} className="mt-2 text-xs text-ink italic">
+        <p id={`${name}-hint`} className="mt-2 text-sm text-ink italic">
           {hint}
         </p>
       )}

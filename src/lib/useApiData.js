@@ -4,7 +4,8 @@ import { api } from './api'
 /**
  * Charge une ressource GET de l'API. `reload()` relance la requête ; une
  * réponse arrivée après un changement d'adresse (ex. semaine suivante) est
- * ignorée. `onData` / `onError` sont appelés à chaque réponse.
+ * ignorée. `onData` / `onError` sont appelés à chaque réponse. Sans adresse
+ * (`path` vide), rien n'est chargé.
  */
 export function useApiData(path, { onData, onError } = {}) {
   const [state, setState] = useState({ path: null, data: null, error: null })
@@ -16,6 +17,7 @@ export function useApiData(path, { onData, onError } = {}) {
   })
 
   useEffect(() => {
+    if (!path) return undefined
     let active = true
     api(path).then(
       (data) => {

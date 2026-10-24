@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 
 const base =
-  'font-label inline-flex items-center justify-center gap-2 rounded-sm px-7 py-3.5 text-sm tracking-wide uppercase transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-4'
+  'font-label inline-flex min-h-11 items-center justify-center gap-2 rounded-sm px-7 py-3.5 text-xs tracking-[0.18em] uppercase transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 md:text-sm'
 
 // La palette café ne fournit qu'une seule teinte de texte/accent (#7C644C) :
 // pas de second brun plus sombre pour un hover "couleur sur couleur". Le

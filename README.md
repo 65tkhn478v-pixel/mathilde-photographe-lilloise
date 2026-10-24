@@ -94,6 +94,16 @@ Elle recontacte chaque client et confirme elle-même.
   exclu du sitemap et de robots.txt). La protection est le mot de passe, pas
   l'URL. Onglets Calendrier (vue mensuelle) / Demandes / Mes créneaux /
   Historique.
+- **Saisie rapide des créneaux** : dans Calendrier ou Mes créneaux, toucher
+  un jour ouvre le panneau du jour. Choisir la durée (1h ou 1h30, mémorisée
+  sur l'appareil), cocher des heures de début (8h00 → 20h00, toutes les
+  30 min), puis « Valider et jour suivant ». Un jour avec 3 créneaux = 4
+  touches. Les chevauchements sont bloqués, les créneaux réservés sont
+  verrouillés. Enregistrement en une requête atomique :
+  `PUT /api/admin/days/:date/slots` (liste complète des créneaux voulus,
+  heure de Paris ; 409 si un créneau réservé est omis).
+- **Typographie** : échelle définie par les tokens `--text-*` de
+  `src/index.css` (tailles réduites, champs de formulaire à 16px minimum).
 - **Statuts** : couleur dédiée + icône + libellé (`StatusBadge`), palette de
   statut dans `src/index.css` (contrastes calculés en commentaire).
 - **Migrations** : `migrations/` est appliqué à la base de production à

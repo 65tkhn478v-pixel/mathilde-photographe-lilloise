@@ -8,6 +8,7 @@ import { GENERIC_ERROR, error } from './http.js'
 import { createBooking, getSlots } from './public.js'
 
 const ID = '(?<id>\\d+)'
+const DATE = '(?<date>\\d{4}-\\d{2}-\\d{2})'
 
 // [méthode, chemin, handler, options]
 const ROUTES = [
@@ -19,6 +20,8 @@ const ROUTES = [
   ['GET', '/api/admin/session', admin.session],
 
   ['GET', '/api/admin/calendar', admin.calendar],
+  ['GET', `/api/admin/days/${DATE}/slots`, admin.getDay],
+  ['PUT', `/api/admin/days/${DATE}/slots`, admin.putDay],
   ['GET', '/api/admin/slots', admin.listSlots],
   ['POST', '/api/admin/slots', admin.createSlots],
   ['POST', '/api/admin/slots/duplicate-week', admin.duplicateWeek],

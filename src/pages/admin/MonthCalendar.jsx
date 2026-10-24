@@ -167,7 +167,7 @@ export function MonthCalendar({ month, title, days, slotsByDay, selected, focusK
                             {slots.slice(0, 3).map((s) => (
                               <StatusDot key={s.id} state={s.state} />
                             ))}
-                            {slots.length > 3 && <span className="text-[0.65rem] leading-none">+{slots.length - 3}</span>}
+                            {slots.length > 3 && <span className="text-xs leading-none">+{slots.length - 3}</span>}
                           </span>
                         )}
                         {/* Desktop : mini-étiquettes avec l'heure, dans la couleur du statut. */}
@@ -177,7 +177,7 @@ export function MonthCalendar({ month, title, days, slotsByDay, selected, focusK
                               <span
                                 key={s.id}
                                 className={clsx(
-                                  'flex items-center gap-1 rounded-sm border px-1 text-[0.7rem] leading-5 whitespace-nowrap',
+                                  'flex items-center gap-1 rounded-sm border px-1 text-xs leading-5 whitespace-nowrap',
                                   CHIP[s.state],
                                   !inMonth && 'opacity-60'
                                 )}
@@ -186,7 +186,7 @@ export function MonthCalendar({ month, title, days, slotsByDay, selected, focusK
                                 {formatTime(s.start_at).replace('h00', 'h')}
                               </span>
                             ))}
-                            {slots.length > 4 && <span className="text-[0.7rem]">+{slots.length - 4}</span>}
+                            {slots.length > 4 && <span className="text-xs">+{slots.length - 4}</span>}
                           </span>
                         )}
                       </button>
@@ -210,7 +210,7 @@ export function CalendarLegend() {
     ['closed', 'Fermé'],
   ]
   return (
-    <ul className="flex flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="Légende du calendrier">
+    <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="Légende du calendrier">
       {items.map(([state, label]) => (
         <li key={state} className="flex items-center gap-2">
           <StatusDot state={state} className="h-2.5 w-2.5" />

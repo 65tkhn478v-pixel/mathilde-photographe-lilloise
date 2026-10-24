@@ -68,7 +68,7 @@ export function StatusBadge({ state, className, children }) {
   return (
     <span
       className={clsx(
-        'font-label inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.7rem] tracking-[0.1em] whitespace-nowrap uppercase transition-colors duration-200',
+        'font-label inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs tracking-[0.1em] whitespace-nowrap uppercase transition-colors duration-200',
         config.badge,
         className
       )}

@@ -1,14 +1,11 @@
 import { useMemo, useRef, useState } from 'react'
 import { useApiData } from '../../lib/useApiData'
-import { sessionLabel } from '../../../shared/booking.js'
-import { addDays, addMonths, dateKey, formatKeyLong, formatMonthKey, formatRange } from '../../../shared/time.js'
+import { addDays, addMonths, dateKey, formatMonthKey } from '../../../shared/time.js'
 import { Loading, Notice } from '../../components/ui/Notice'
-import { StatusBadge } from '../../components/ui/StatusBadge'
-import { FEEDBACK, adminButton, apiErrorMessage } from './adminUi'
-import { BookingActions } from './BookingActions'
+import { adminButton, apiErrorMessage } from './adminUi'
+import { DaySlotsPanel } from './DaySlotsPanel'
 import { CalendarLegend, MonthCalendar } from './MonthCalendar'
 import { countLabel, gridSlots } from './calendarUtils'
-import { QuickAdd } from './SlotsTab'
 
 const todayKey = () => dateKey(new Date())
 
@@ -19,12 +16,13 @@ function gridDays(start, end) {
   return days
 }
 
-export function CalendarTab({ onExpired, onPendingCount, onFeedback }) {
+export function CalendarTab({ onExpired, onPendingCount, onFeedback, onGoToRequests }) {
   const [month, setMonth] = useState(() => todayKey().slice(0, 7))
   const [direction, setDirection] = useState(1)
   const [selected, setSelected] = useState(() => todayKey())
   const [focusKey, setFocusKey] = useState(() => todayKey())
-  const [adding, setAdding] = useState(false)
+  const [panelDate, setPanelDate] = useState(null)
+  const returnFocus = useRef(null)
   const focusRequest = useRef(false)
   const requestFocus = () => {
     focusRequest.current = true
@@ -60,7 +58,6 @@ export function CalendarTab({ onExpired, onPendingCount, onFeedback }) {
     setDirection(next > month ? 1 : -1)
     setMonth(next)
     setFocusKey(focus ?? (next === todayKey().slice(0, 7) ? todayKey() : `${next}-01`))
-    setAdding(false)
   }
 
   const goToday = () => {
@@ -68,10 +65,19 @@ export function CalendarTab({ onExpired, onPendingCount, onFeedback }) {
     setSelected(todayKey())
   }
 
+  // Toucher un jour ouvre le panneau du jour (saisie rapide des créneaux).
   const select = (key) => {
     setSelected(key)
     setFocusKey(key)
-    setAdding(false)
+    returnFocus.current = document.activeElement
+    setPanelDate(key)
+  }
+
+  // Le panneau enchaîne les jours : la grille suit (mois compris).
+  const followPanel = (key) => {
+    setPanelDate(key)
+    setSelected(key)
+    setFocusKey(key)
     if (key.slice(0, 7) !== month) changeMonth(key.slice(0, 7), key)
   }
 
@@ -79,16 +85,10 @@ export function CalendarTab({ onExpired, onPendingCount, onFeedback }) {
   const monthSlots = gridSlots((data?.slots ?? []).filter((s) => dateKey(new Date(s.start_at)).startsWith(month)))
   const count = (state) => monthSlots.filter((s) => s.state === state).length
 
-  const onDone = (action) => {
-    onFeedback(FEEDBACK[action])
-    reload()
-  }
-
-  const daySlots = slotsByDay.get(selected) ?? []
   const title = formatMonthKey(month)
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
+    <div>
       <section aria-labelledby="calendar-title">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="calendar-title" className="text-2xl text-ink" aria-live="polite">
@@ -160,64 +160,25 @@ export function CalendarTab({ onExpired, onPendingCount, onFeedback }) {
           )}
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <CalendarLegend />
+          <p className="text-sm italic">Touchez un jour pour gérer ses créneaux.</p>
         </div>
       </section>
 
-      <section aria-labelledby="day-title" className="mt-8 border-t border-line pt-6 lg:mt-0 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
-        <h3 id="day-title" className="font-display text-2xl text-ink" aria-live="polite">
-          {formatKeyLong(selected)}
-        </h3>
-
-        {daySlots.length === 0 ? (
-          <p className="mt-3 text-sm italic">Aucun créneau ce jour-là.</p>
-        ) : (
-          <ul className="mt-4 space-y-4">
-            {daySlots.map((slot) => (
-              <li key={slot.id} className="border-b border-line pb-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm">{formatRange(slot.start_at, slot.end_at)}</p>
-                  <StatusBadge state={slot.state} />
-                </div>
-                {slot.booking && (
-                  <div className="mt-2">
-                    <p className="text-sm">
-                      {sessionLabel(slot.booking.session_type)} — {slot.booking.first_name} {slot.booking.last_name}
-                    </p>
-                    <div className="mt-3">
-                      <BookingActions booking={slot.booking} onDone={onDone} onExpired={onExpired} compact />
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="mt-5">
-          {adding ? (
-            <QuickAdd
-              key={selected}
-              defaultDate={selected}
-              initialOpen
-              compact
-              onExpired={onExpired}
-              onCreated={reload}
-              onClose={() => setAdding(false)}
-            />
-          ) : (
-            <button
-              type="button"
-              className={adminButton('outline', 'w-full')}
-              onClick={() => setAdding(true)}
-              disabled={selected < todayKey()}
-            >
-              + Ajouter un créneau ce jour-là
-            </button>
-          )}
-        </div>
-      </section>
+      <DaySlotsPanel
+        date={panelDate}
+        returnFocus={returnFocus}
+        onChangeDate={followPanel}
+        onClose={() => setPanelDate(null)}
+        onSaved={reload}
+        onExpired={onExpired}
+        onFeedback={onFeedback}
+        onGoToRequests={() => {
+          setPanelDate(null)
+          onGoToRequests()
+        }}
+      />
     </div>
   )
 }

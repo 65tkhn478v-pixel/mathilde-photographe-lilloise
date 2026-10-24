@@ -110,7 +110,7 @@ export function BookingActions({ booking, onDone, onExpired, compact = false }) 
       </div>
 
       <div aria-live="polite">
-        {copied && <p className="mt-2 text-xs italic">{copied}</p>}
+        {copied && <p className="mt-2 text-sm italic">{copied}</p>}
         {error && (
           <Notice tone="error" className="mt-3">
             {error}

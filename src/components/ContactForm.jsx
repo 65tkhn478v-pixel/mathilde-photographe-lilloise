@@ -154,7 +154,7 @@ export function ContactForm() {
         />
       </label>
 
-      <p className="text-xs text-ink-faint">
+      <p className="text-sm text-ink-faint">
         Les tarifs et disponibilités vous seront communiqués en réponse à votre message.
       </p>
 

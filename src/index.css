@@ -47,6 +47,38 @@
   --font-body: "Libre Caslon Text", Georgia, serif;
   --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
+  /*
+    Échelle typographique — plus petite et plus douce, dans l'esprit de
+    l'ancien site Pixieset (thème « Jennifer »). Les tailles du site
+    passent toutes par ces tokens (classes text-xs … text-6xl), redéfinis
+    ici : la réduction est globale et la hiérarchie conservée.
+    Valeurs de départ du brief (mesure directe du site Pixieset impossible
+    depuis l'environnement de développement) :
+      text-xs   11px  (12px dès 768px) labels en capitales, boutons mobiles, badges
+      text-sm   13px  petits textes, aides, libellés de formulaire ; boutons et navigation desktop
+      text-base 15px  texte courant mobile (16px desktop, voir body)
+      text-lg   17px
+      text-xl   18px  sous-titres (H3)
+      text-2xl  22px  titres de section mobile, H3 desktop
+      text-3xl  24px  titres de section mobile (grands)
+      text-4xl  30px  titre de page mobile, titre de section desktop
+      text-5xl  40px  titre de page desktop
+      text-6xl  46px  titre hero desktop
+    Champs de formulaire : 16px minimum partout (sinon Safari iOS zoome).
+  */
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.125rem;
+  --text-2xl: 1.375rem;
+  --text-3xl: 1.5rem;
+  --text-4xl: 1.875rem;
+  --text-5xl: 2.5rem;
+  --text-6xl: 2.875rem;
+  --text-5xl--line-height: 1.12;
+  --text-6xl--line-height: 1.1;
+
   --color-paper: #faf4e8; /* fond principal — vanille pâle */
   --color-mist: #eadcc8; /* fond secondaire — sections alternées, cartes */
   --color-ink: #7c644c; /* texte courant + accent — seule teinte de texte fournie */
@@ -103,6 +135,13 @@
   }
 }
 
+/* Labels en capitales un peu plus grands sur desktop (11px → 12px). */
+@media (min-width: 768px) {
+  :root {
+    --text-xs: 0.75rem;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--color-line);
@@ -117,7 +156,15 @@
     background-color: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.7;
     -webkit-font-smoothing: antialiased;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      font-size: 1rem;
+    }
   }
 
   h1,
@@ -130,10 +177,18 @@
     text-wrap: balance;
   }
 
+  /* Titres principaux en Spectral léger, comme les titres du site Pixieset. */
+  h1,
+  h2 {
+    font-weight: 300;
+  }
+
   input,
   textarea,
   select {
     font-family: var(--font-sans);
+    /* 16px minimum : en dessous, Safari iOS zoome au focus. */
+    font-size: 1rem;
   }
 
   a {
@@ -163,5 +218,32 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Panneau du jour (admin) : feuille qui monte du bas sur mobile, panneau
+   latéral sur desktop. Désactivé par prefers-reduced-motion (règle globale). */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes sheet-left {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.day-sheet[data-state='open'] {
+  animation: sheet-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (min-width: 768px) {
+  .day-sheet[data-state='open'] {
+    animation-name: sheet-left;
   }
 }

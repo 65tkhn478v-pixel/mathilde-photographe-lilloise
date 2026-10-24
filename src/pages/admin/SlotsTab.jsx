@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import clsx from 'clsx'
 import { api } from '../../lib/api'
@@ -17,21 +17,12 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { FieldError, Loading, Notice } from '../../components/ui/Notice'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { adminButton, apiErrorMessage, inputClasses, labelClasses } from './adminUi'
+import { DaySlotsPanel } from './DaySlotsPanel'
 import { sessionLabel } from '../../../shared/booking.js'
-
-// Pas de 15 minutes sur toute la journée.
-const TIMES = Array.from({ length: 96 }, (_, i) => {
-  const h = String(Math.floor(i / 4)).padStart(2, '0')
-  const m = String((i % 4) * 15).padStart(2, '0')
-  return `${h}:${m}`
-})
-const timeLabel = (t) => t.replace(':', 'h')
-const toMinutes = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3))
-const fromMinutes = (m) => TIMES[Math.min(Math.max(Math.round(m / 15), 0), TIMES.length - 1)]
 
 const todayKey = () => dateKey(new Date())
 
-export function SlotsTab({ onExpired, onPendingCount }) {
+export function SlotsTab({ onExpired, onPendingCount, onFeedback, onGoToRequests }) {
   const [week, setWeek] = useState(() => weekStart(todayKey()))
   const [notice, setNotice] = useState(null)
   const from = zonedToUtc(week, '00:00').toISOString()
@@ -56,17 +47,37 @@ export function SlotsTab({ onExpired, onPendingCount }) {
     setWeek(key)
   }
 
-  const onCreated = (createdDate) => {
-    const target = weekStart(createdDate)
-    if (target === week) load()
-    else setWeek(target)
+  // Toucher un jour ouvre le panneau du jour ; il remplace l'ancien formulaire
+  // d'ajout (date + début + fin).
+  const [panelDate, setPanelDate] = useState(null)
+  const returnFocus = useRef(null)
+  const openDay = (key, el) => {
+    returnFocus.current = el
+    setPanelDate(key)
+  }
+  const followPanel = (key) => {
+    setPanelDate(key)
+    if (weekStart(key) !== week) setWeek(weekStart(key))
   }
 
   const currentWeek = weekStart(todayKey())
 
   return (
     <div className="space-y-8">
-      <QuickAdd onCreated={onCreated} onExpired={onExpired} defaultDate={week > todayKey() ? week : todayKey()} />
+      <DaySlotsPanel
+        date={panelDate}
+        returnFocus={returnFocus}
+        onChangeDate={followPanel}
+        onClose={() => setPanelDate(null)}
+        onSaved={load}
+        onExpired={onExpired}
+        onFeedback={onFeedback}
+        onGoToRequests={() => {
+          setPanelDate(null)
+          onGoToRequests()
+        }}
+      />
+      <p className="text-sm italic">Touchez un jour pour ajouter ou retirer ses créneaux.</p>
 
       <section aria-labelledby="week-title">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
@@ -124,10 +135,22 @@ export function SlotsTab({ onExpired, onPendingCount }) {
             <ol className="mt-6 grid gap-6 lg:grid-cols-7 lg:gap-3">
               {days.map((day) => (
                 <li key={day.key} className={clsx('lg:min-w-0', day.key === todayKey() && 'lg:border-t-2 lg:border-ink')}>
-                  <h3 className="font-label text-xs tracking-[0.15em] uppercase lg:pt-2">
-                    <span className="lg:hidden">{formatKeyLong(day.key)}</span>
-                    <span className="hidden lg:inline">{formatKeyShort(day.key)}</span>
-                    {day.key === todayKey() && <span className="ml-2 normal-case italic">(aujourd’hui)</span>}
+                  <h3>
+                    <button
+                      type="button"
+                      onClick={(e) => openDay(day.key, e.currentTarget)}
+                      className="font-label flex min-h-11 w-full items-center justify-between gap-2 border-b border-line text-left text-xs tracking-[0.15em] uppercase hover:border-ink lg:pt-2"
+                    >
+                      <span>
+                        <span className="lg:hidden">{formatKeyLong(day.key)}</span>
+                        <span className="hidden lg:inline">{formatKeyShort(day.key)}</span>
+                        {day.key === todayKey() && <span className="ml-2 normal-case italic">(aujourd’hui)</span>}
+                      </span>
+                      <span aria-hidden="true" className="text-base leading-none">
+                        +
+                      </span>
+                      <span className="sr-only"> : gérer les créneaux</span>
+                    </button>
                   </h3>
                   {day.slots.length === 0 ? (
                     <p className="mt-2 text-sm italic lg:hidden">—</p>
@@ -145,127 +168,6 @@ export function SlotsTab({ onExpired, onPendingCount }) {
         )}
       </section>
     </div>
-  )
-}
-
-export function QuickAdd({ onCreated, onExpired, defaultDate, initialOpen = false, compact = false, onClose }) {
-  const id = useId()
-  const [open, setOpen] = useState(initialOpen)
-  const [date, setDate] = useState(defaultDate)
-  const [start, setStart] = useState('10:00')
-  const [end, setEnd] = useState('12:00')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
-  const [result, setResult] = useState(null)
-
-  const submit = async (e) => {
-    e.preventDefault()
-    setError(null)
-    setResult(null)
-    if (!date) return setError('Choisissez une date.')
-    if (toMinutes(end) <= toMinutes(start)) return setError("L'heure de fin doit être après l'heure de début.")
-    setBusy(true)
-    try {
-      const data = await api('/api/admin/slots', { method: 'POST', body: { slots: [{ date, start, end }] } })
-      const created = data.created[0]
-      const overlap = data.overlaps[0]
-      setResult({
-        text: `Ajouté : ${formatKeyLong(date)}, ${formatRange(created.start_at, created.end_at)}.`,
-        overlap: overlap
-          ? `Attention : il chevauche ${overlap.with.map((s) => formatRange(s.start_at, s.end_at)).join(', ')}. Il a quand même été créé.`
-          : null,
-      })
-      // On reste sur la même date et on propose le créneau suivant, de même durée.
-      const duration = toMinutes(end) - toMinutes(start)
-      const nextStart = end
-      const nextEnd = fromMinutes(Math.min(toMinutes(end) + duration, 23 * 60 + 45))
-      setStart(nextStart)
-      setEnd(toMinutes(nextEnd) > toMinutes(nextStart) ? nextEnd : '23:45')
-      onCreated(date)
-    } catch (err) {
-      const message = apiErrorMessage(err, onExpired)
-      if (message) setError(message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  if (!open) {
-    return (
-      <button type="button" className={adminButton('solid', 'w-full sm:w-auto')} onClick={() => setOpen(true)}>
-        + Ajouter un créneau
-      </button>
-    )
-  }
-
-  return (
-    <form onSubmit={submit} noValidate className="border border-line p-4 sm:p-5" aria-labelledby={`${id}-title`}>
-      <div className="flex items-center justify-between gap-3">
-        <h2 id={`${id}-title`} className="text-xl text-ink">
-          Ajouter un créneau
-        </h2>
-        <button
-          type="button"
-          className={adminButton('quiet')}
-          onClick={() => {
-            setOpen(false)
-            onClose?.()
-          }}
-        >
-          Fermer
-        </button>
-      </div>
-      <div
-        className={clsx(
-          'mt-4 grid grid-cols-2 gap-x-4 gap-y-5',
-          !compact && 'sm:grid-cols-[1.4fr_1fr_1fr_auto] sm:items-end'
-        )}
-      >
-        <label className={clsx(labelClasses, 'col-span-2', !compact && 'sm:col-span-1')}>
-          Date
-          <input
-            type="date"
-            required
-            value={date}
-            min={todayKey()}
-            onChange={(e) => setDate(e.target.value)}
-            className={inputClasses}
-          />
-        </label>
-        <label className={labelClasses}>
-          Début
-          <select value={start} onChange={(e) => setStart(e.target.value)} className={inputClasses}>
-            {TIMES.map((t) => (
-              <option key={t} value={t}>
-                {timeLabel(t)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={labelClasses}>
-          Fin
-          <select value={end} onChange={(e) => setEnd(e.target.value)} className={inputClasses}>
-            {TIMES.map((t) => (
-              <option key={t} value={t}>
-                {timeLabel(t)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" disabled={busy} className={adminButton('solid', clsx('col-span-2', !compact && 'sm:col-span-1'))}>
-          {busy ? 'Ajout…' : 'Ajouter'}
-        </button>
-      </div>
-      <div aria-live="polite">
-        <FieldError>{error}</FieldError>
-        {result && (
-          <div className="mt-4 space-y-2 text-sm">
-            <p>{result.text}</p>
-            {result.overlap && <Notice tone="error">{result.overlap}</Notice>}
-          </div>
-        )}
-      </div>
-    </form>
   )
 }
 
@@ -367,7 +269,7 @@ function SlotItem({ slot, onChanged, onExpired }) {
       {slot.booking && (
         <p className="mt-2 text-sm break-words">
           {slot.booking.first_name} {slot.booking.last_name}
-          <span className="block text-xs italic">{sessionLabel(slot.booking.session_type)}</span>
+          <span className="block text-sm italic">{sessionLabel(slot.booking.session_type)}</span>
         </p>
       )}
       {!past && (
@@ -376,7 +278,7 @@ function SlotItem({ slot, onChanged, onExpired }) {
             <button
               type="button"
               disabled={busy}
-              className={adminButton('quiet', 'text-[0.7rem]')}
+              className={adminButton('quiet', 'text-xs')}
               onClick={() => run(`/api/admin/slots/${slot.id}`, 'PATCH', { closed: !slot.closed })}
             >
               {slot.closed ? 'Rouvrir' : 'Fermer'}
@@ -388,11 +290,11 @@ function SlotItem({ slot, onChanged, onExpired }) {
                 type="button"
                 disabled
                 aria-describedby={hintId}
-                className={adminButton('quiet', 'text-[0.7rem]')}
+                className={adminButton('quiet', 'text-xs')}
               >
                 Supprimer
               </button>
-              <p id={hintId} className="w-full text-xs italic">
+              <p id={hintId} className="w-full text-sm italic">
                 Demande en cours : refusez-la ou supprimez-la dans « Demandes » avant de supprimer ce créneau.
               </p>
             </>
@@ -403,7 +305,7 @@ function SlotItem({ slot, onChanged, onExpired }) {
               confirmLabel="Supprimer"
               onConfirm={() => run(`/api/admin/slots/${slot.id}`, 'DELETE')}
               trigger={
-                <button type="button" disabled={busy} className={adminButton('quiet', 'text-[0.7rem]')}>
+                <button type="button" disabled={busy} className={adminButton('quiet', 'text-xs')}>
                   Supprimer
                 </button>
               }

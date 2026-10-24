@@ -45,7 +45,7 @@ export function Nav() {
         </Link>
 
         <nav className="hidden md:block" aria-label="Navigation principale">
-          <ul className="font-label flex items-center gap-9 text-sm tracking-wide uppercase">
+          <ul className="font-label flex items-center gap-8 text-sm tracking-[0.15em] uppercase">
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
                 <NavLink

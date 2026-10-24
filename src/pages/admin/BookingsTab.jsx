@@ -165,7 +165,7 @@ function BookingCard({ booking, onDone, onExpired }) {
         <p className="mt-3 border-l-2 border-line pl-3 text-sm break-words whitespace-pre-line">{booking.message}</p>
       )}
 
-      <p className="mt-3 text-xs">
+      <p className="mt-3 text-sm">
         Demande reçue le {formatDayMonth(booking.created_at)} à {formatTime(booking.created_at)}
       </p>
 
