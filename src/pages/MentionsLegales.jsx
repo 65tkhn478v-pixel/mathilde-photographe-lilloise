@@ -1,5 +1,6 @@
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Reveal } from '../components/Reveal'
+import { BookingEndBlock } from '../components/BookingEndBlock'
 import { CONTACT_EMAIL } from '../data/site'
 import { RETENTION_MONTHS } from '../../shared/booking.js'
 
@@ -89,6 +90,7 @@ export default function MentionsLegales() {
           </div>
         </Reveal>
       </div>
+      <BookingEndBlock />
     </div>
   )
 }

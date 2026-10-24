@@ -95,9 +95,11 @@ Elle recontacte chaque client et confirme elle-même.
   l'URL. Onglets Calendrier (vue mensuelle) / Demandes / Mes créneaux /
   Historique.
 - **Saisie rapide des créneaux** : dans Calendrier ou Mes créneaux, toucher
-  un jour ouvre le panneau du jour. Choisir la durée (1h ou 1h30, mémorisée
+  un jour ouvre le panneau du jour. Choisir la durée (1h ou 2h, mémorisée
   sur l'appareil), cocher des heures de début (8h00 → 20h00, toutes les
-  30 min), puis « Valider et jour suivant ». Un jour avec 3 créneaux = 4
+  30 min ; aucun créneau ne finit après 21h00), puis « Valider et jour
+  suivant ». Les créneaux existants d'une autre durée (ex. 1h30) restent
+  valides. Un jour avec 3 créneaux = 4
   touches. Les chevauchements sont bloqués, les créneaux réservés sont
   verrouillés. Enregistrement en une requête atomique :
   `PUT /api/admin/days/:date/slots` (liste complète des créneaux voulus,

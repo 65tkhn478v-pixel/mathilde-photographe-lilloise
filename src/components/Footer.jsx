@@ -24,6 +24,11 @@ export function Footer() {
           <nav aria-label="Plan du site">
             <p className="font-label text-xs tracking-[0.2em] text-ink-faint uppercase">Navigation</p>
             <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <Link to={BOOKING_LINK.to} className="text-ink-soft hover:text-accent">
+                  Réserver une séance
+                </Link>
+              </li>
               {NAV_LINKS.map((link) => (
                 <li key={link.to}>
                   <Link to={link.to} className="text-ink-soft hover:text-accent">
@@ -31,11 +36,6 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link to={BOOKING_LINK.to} className="text-ink-soft hover:text-accent">
-                  {BOOKING_LINK.label}
-                </Link>
-              </li>
               <li>
                 <Link to="/mentions-legales" className="text-ink-soft hover:text-accent">
                   Mentions légales

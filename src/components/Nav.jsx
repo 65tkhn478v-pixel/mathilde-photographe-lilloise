@@ -138,6 +138,12 @@ export function Nav() {
                       className="flex flex-1 flex-col items-center justify-center gap-8"
                       aria-label="Navigation principale"
                     >
+                      <NavLink
+                        to={BOOKING_LINK.to}
+                        className="font-label rounded-sm border border-ink/40 px-6 py-2 text-3xl text-ink"
+                      >
+                        {BOOKING_LINK.label}
+                      </NavLink>
                       {NAV_LINKS.map((link) => (
                         <NavLink
                           key={link.to}
@@ -153,12 +159,6 @@ export function Nav() {
                           {link.label}
                         </NavLink>
                       ))}
-                      <NavLink
-                        to={BOOKING_LINK.to}
-                        className="font-label rounded-sm border border-ink/40 px-6 py-2 text-3xl text-ink"
-                      >
-                        {BOOKING_LINK.label}
-                      </NavLink>
                     </nav>
                   </motion.div>
                 </Dialog.Content>

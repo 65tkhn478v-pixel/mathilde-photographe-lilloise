@@ -1,6 +1,6 @@
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Reveal } from '../components/Reveal'
-import { Button } from '../components/Button'
+import { BookingEndBlock } from '../components/BookingEndBlock'
 
 export default function About() {
   usePageMeta({
@@ -96,9 +96,6 @@ export default function About() {
                 lesquelles vous vous reconnaîtrez avec émotion, même des années plus tard.
               </p>
             </div>
-            <Button to="/contact" className="mt-8">
-              Et si on travaillait ensemble ?
-            </Button>
           </Reveal>
 
           <Reveal delay={0.15}>
@@ -112,6 +109,7 @@ export default function About() {
           </Reveal>
         </div>
       </section>
+      <BookingEndBlock />
     </div>
   )
 }

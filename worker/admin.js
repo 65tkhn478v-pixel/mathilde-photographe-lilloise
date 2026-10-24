@@ -2,6 +2,7 @@
 // (vérifiée dans worker/index.js).
 
 import {
+  DAY_LAST_END,
   DAY_START_TIMES,
   LOGIN_MAX_FAILURES,
   LOGIN_WINDOW_MINUTES,
@@ -160,7 +161,7 @@ export async function putDay(request, env, { date }) {
     if (end <= start) return error(422, "L'heure de fin doit être après l'heure de début.")
     const key = `${start.toISOString()}|${end.toISOString()}`
     if (!wanted.some((w) => w.key === key)) {
-      wanted.push({ key, start_at: start.toISOString(), end_at: end.toISOString(), startTime: input.start })
+      wanted.push({ key, start_at: start.toISOString(), end_at: end.toISOString(), startTime: input.start, endTime: input.end })
     }
   }
 
@@ -185,7 +186,10 @@ export async function putDay(request, env, { date }) {
     if (!DAY_START_TIMES.includes(w.startTime)) {
       return error(422, 'Les nouveaux créneaux commencent entre 8h00 et 20h00, toutes les 30 minutes.')
     }
-    if (!SLOT_DURATIONS.includes(minutes)) return error(422, 'Les nouveaux créneaux durent 1h ou 1h30.')
+    if (!SLOT_DURATIONS.includes(minutes)) return error(422, 'Les nouveaux créneaux durent 1h ou 2h.')
+    if (w.endTime > DAY_LAST_END) {
+      return error(422, `Le créneau de ${formatRange(w.start_at, w.end_at)} finirait après 21h : les créneaux se terminent au plus tard à 21h00.`)
+    }
     if (w.start_at <= nowIso) return error(422, `Le créneau de ${formatRange(w.start_at, w.end_at)} est déjà passé.`)
   }
 
@@ -223,6 +227,7 @@ function parseSlotInput(input, nowIso) {
   const end = zonedToUtc(input?.date, input?.end)
   if (!start || !end) return { error: "Date ou horaire invalide (attention aux heures qui n'existent pas lors du changement d'heure)." }
   if (end <= start) return { error: "L'heure de fin doit être après l'heure de début." }
+  if (input.end > DAY_LAST_END) return { error: 'Les créneaux se terminent au plus tard à 21h00.' }
   if (start.toISOString() <= nowIso) return { error: 'Ce créneau est déjà passé.' }
   return { start_at: start.toISOString(), end_at: end.toISOString() }
 }

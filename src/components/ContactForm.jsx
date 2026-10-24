@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { SESSION_TYPE_VALUES } from '../../shared/booking.js'
 import { CONTACT_EMAIL, SHOOTING_TYPES } from '../data/site'
 
 const inputClasses =
@@ -139,6 +142,26 @@ export function ContactForm() {
             ))}
           </select>
         </label>
+        {/* Séance réservable en ligne : on propose les créneaux, sans bloquer l'envoi du message. */}
+        <div aria-live="polite" className="-mt-4 sm:col-span-2">
+          <AnimatePresence>
+            {SESSION_TYPE_VALUES.includes(values.type) && (
+              <motion.p
+                key="encart-reservation"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="bg-accent-soft/40 px-4 py-3 text-sm text-ink"
+              >
+                Pour cette séance, vous pouvez directement choisir un créneau.{' '}
+                <Link to={`/reserver?seance=${values.type}`} className="underline underline-offset-4 hover:text-accent">
+                  Voir les disponibilités
+                </Link>
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <label className="block text-sm text-ink-soft">

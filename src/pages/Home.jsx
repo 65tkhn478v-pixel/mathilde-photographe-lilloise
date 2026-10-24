@@ -3,7 +3,8 @@ import { Hero } from '../components/Hero'
 import { AboutTeaser } from '../components/AboutTeaser'
 import { PortfolioPreview } from '../components/PortfolioPreview'
 import { Philosophy } from '../components/Philosophy'
-import { ContactCTA } from '../components/ContactCTA'
+import { BookingEndBlock } from '../components/BookingEndBlock'
+import { NextAvailabilities } from '../components/NextAvailabilities'
 
 export default function Home() {
   usePageMeta({
@@ -19,8 +20,9 @@ export default function Home() {
       <Hero />
       <AboutTeaser />
       <PortfolioPreview />
+      <NextAvailabilities />
       <Philosophy />
-      <ContactCTA />
+      <BookingEndBlock />
     </>
   )
 }

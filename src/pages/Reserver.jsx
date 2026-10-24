@@ -3,6 +3,9 @@ import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { api, ApiError } from '../lib/api'
+import { useApiData } from '../lib/useApiData'
+import { Loading, Notice } from '../components/ui/Notice'
+import { formatDayLong, formatShortRange } from '../../shared/time.js'
 import {
   EMAIL_MAX_LENGTH,
   EMAIL_PATTERN,
@@ -66,6 +69,12 @@ export default function Reserver() {
   // Depuis la page Services (?seance=grossesse) : type présélectionné, on
   // ouvre directement l'étape du créneau.
   const [step, setStep] = useState(presetValid ? 2 : 1)
+  // ?creneau=<id> (depuis « Prochaines disponibilités ») : créneau présélectionné
+  // s'il est encore libre. La protection 409 à l'envoi reste la sécurité finale.
+  const creneauParam = searchParams.get('creneau')
+  const [creneauState, setCreneauState] = useState(creneauParam ? 'checking' : null) // 'checking' | 'ok' | 'missing'
+  const [slotFromLink, setSlotFromLink] = useState(false)
+  const [introNotice, setIntroNotice] = useState(null)
   const [navigated, setNavigated] = useState(false)
   const [sessionType, setSessionType] = useState(presetValid ? preset : null)
   const [slot, setSlot] = useState(null)
@@ -77,6 +86,26 @@ export default function Reserver() {
   const [booking, setBooking] = useState(null)
   const reduceMotion = useReducedMotion()
 
+  const missing = 'Ce créneau vient d’être réservé. Voici les autres disponibilités.'
+  useApiData(creneauParam ? '/api/slots' : null, {
+    onData: (data) => {
+      if (creneauState !== 'checking') return
+      const found = data.slots.find((s) => String(s.id) === creneauParam)
+      if (found) {
+        setSlot(found)
+        setSlotFromLink(true)
+        setCreneauState('ok')
+        if (presetValid) setStep(3)
+      } else {
+        setCreneauState('missing')
+        if (presetValid) setSlotNotice(missing)
+        else setIntroNotice(missing)
+      }
+    },
+    // Vérification impossible : parcours normal, le créneau sera choisi à l'étape 2.
+    onError: () => setCreneauState((s) => (s === 'checking' ? 'missing' : s)),
+  })
+
   const goTo = (next) => {
     setNavigated(true)
     setStep(next)
@@ -86,7 +115,9 @@ export default function Reserver() {
   const nextFromSession = () => {
     if (!sessionType) return setErrors({ session: 'Choisissez un type de séance.' })
     setErrors({})
-    goTo(2)
+    setIntroNotice(null)
+    // Créneau déjà choisi depuis l'accueil : directement aux coordonnées.
+    goTo(slotFromLink && slot ? 3 : 2)
   }
 
   const nextFromSlot = () => {
@@ -105,12 +136,16 @@ export default function Reserver() {
       return
     }
     // Pseudo Instagram normalisé dès le récapitulatif (« @compte » → « compte »).
-    setDetails((d) => ({ ...d, instagram: normalizeInstagram(d.instagram).value ?? '' }))
+    setDetails((d) => ({
+      ...d,
+      instagram: normalizeInstagram(d.instagram).value ?? '',
+    }))
     goTo(4)
   }
 
   const onSlotChange = useCallback((value) => {
     setSlot(value)
+    if (!value) setSlotFromLink(false)
     if (value) setErrors((e) => ({ ...e, slot: undefined }))
   }, [])
 
@@ -134,7 +169,10 @@ export default function Reserver() {
         },
       })
       // Récapitulatif construit à partir de ce qui a été choisi.
-      setBooking({ session_type: sessionType, slot: data.booking?.slot ?? slot })
+      setBooking({
+        session_type: sessionType,
+        slot: data.booking?.slot ?? slot,
+      })
       goTo('done')
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -186,65 +224,92 @@ export default function Reserver() {
           </div>
         )}
 
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: reduceMotion ? 0 : -6 }}
-            transition={transition}
-            className="mt-10"
+        {step === 1 && slotFromLink && slot && (
+          <div
+            className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-l-2 border-ink py-1 pl-4 text-ink"
+            role="status"
           >
-            {step === 1 && (
-              <StepSession
-                value={sessionType}
-                onChange={(v) => {
-                  setSessionType(v)
-                  setErrors({})
-                }}
-                onNext={nextFromSession}
-                error={errors.session ?? errors.session_type}
-                focusOnMount={navigated}
-              />
-            )}
-            {step === 2 && (
-              <StepSlot
-                sessionType={sessionType}
-                onEditSession={() => goTo(1)}
-                value={slot}
-                onChange={onSlotChange}
-                onNext={nextFromSlot}
-                onBack={() => goTo(1)}
-                notice={slotNotice}
-                error={errors.slot ?? errors.slot_id}
-                focusOnMount={navigated}
-              />
-            )}
-            {step === 3 && (
-              <StepDetails
-                values={details}
-                onChange={setDetails}
-                errors={errors}
-                onNext={nextFromDetails}
-                onBack={() => goTo(2)}
-                focusOnMount={navigated}
-              />
-            )}
-            {step === 4 && (
-              <StepSummary
-                sessionType={sessionType}
-                slot={slot}
-                details={details}
-                onEdit={goTo}
-                onSubmit={submit}
-                submitting={submitting}
-                error={submitError}
-                focusOnMount={navigated}
-              />
-            )}
-            {step === 'done' && booking && <BookingDone booking={booking} focusOnMount />}
-          </motion.div>
-        </AnimatePresence>
+            <p>
+              Créneau choisi : {formatDayLong(slot.start_at).replace(/^./, (c) => c.toLowerCase())},{' '}
+              {formatShortRange(slot.start_at, slot.end_at)}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSlot(null)
+                setSlotFromLink(false)
+              }}
+              className="min-h-11 text-sm underline underline-offset-4 hover:text-accent"
+            >
+              Changer<span className="sr-only"> de créneau</span>
+            </button>
+          </div>
+        )}
+        {step === 1 && introNotice && <Notice className="mt-8">{introNotice}</Notice>}
+
+        {creneauState === 'checking' ? (
+          <Loading>Vérification du créneau…</Loading>
+        ) : (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: reduceMotion ? 0 : -6 }}
+              transition={transition}
+              className="mt-10"
+            >
+              {step === 1 && (
+                <StepSession
+                  value={sessionType}
+                  onChange={(v) => {
+                    setSessionType(v)
+                    setErrors({})
+                  }}
+                  onNext={nextFromSession}
+                  error={errors.session ?? errors.session_type}
+                  focusOnMount={navigated}
+                />
+              )}
+              {step === 2 && (
+                <StepSlot
+                  sessionType={sessionType}
+                  onEditSession={() => goTo(1)}
+                  value={slot}
+                  onChange={onSlotChange}
+                  onNext={nextFromSlot}
+                  onBack={() => goTo(1)}
+                  notice={slotNotice}
+                  error={errors.slot ?? errors.slot_id}
+                  focusOnMount={navigated}
+                />
+              )}
+              {step === 3 && (
+                <StepDetails
+                  values={details}
+                  onChange={setDetails}
+                  errors={errors}
+                  onNext={nextFromDetails}
+                  onBack={() => goTo(2)}
+                  focusOnMount={navigated}
+                />
+              )}
+              {step === 4 && (
+                <StepSummary
+                  sessionType={sessionType}
+                  slot={slot}
+                  details={details}
+                  onEdit={goTo}
+                  onSubmit={submit}
+                  submitting={submitting}
+                  error={submitError}
+                  focusOnMount={navigated}
+                />
+              )}
+              {step === 'done' && booking && <BookingDone booking={booking} focusOnMount />}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
     </div>
   )

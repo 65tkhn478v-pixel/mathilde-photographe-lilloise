@@ -1,17 +1,18 @@
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Reveal } from '../components/Reveal'
 import { Link } from 'react-router-dom'
-import { Button } from '../components/Button'
+import { BookingCTA } from '../components/BookingCTA'
+import { BookingEndBlock } from '../components/BookingEndBlock'
 
 const SERVICES = [
   {
     title: 'Grossesse',
-    action: { label: 'Réserver cette séance', to: '/reserver?seance=grossesse' },
+    seance: 'grossesse',
     text: "Un moment suspendu pour garder la trace de l'attente, en douceur, seule ou accompagnée.",
   },
   {
     title: 'Naissance',
-    action: { label: 'Réserver cette séance', to: '/reserver?seance=naissance' },
+    seance: 'naissance',
     text: 'Les tout premiers jours de votre enfant, à la maison ou à la maternité, dans la lumière du quotidien.',
   },
   {
@@ -22,7 +23,7 @@ const SERVICES = [
   },
   {
     title: 'Famille',
-    action: { label: 'Réserver cette séance', to: '/reserver?seance=famille' },
+    seance: 'famille',
     text: 'Des instants du quotidien ou une séance dédiée, pour fixer ce qui vous lie.',
   },
   {
@@ -31,7 +32,7 @@ const SERVICES = [
   },
   {
     title: 'Portrait individuel',
-    action: { label: 'Réserver cette séance', to: '/reserver?seance=portrait' },
+    seance: 'portrait',
     text: 'Un portrait sincère, qui vous ressemble, loin des poses figées.',
   },
 ]
@@ -73,6 +74,16 @@ export default function Services() {
             <Reveal key={service.title} delay={(index % 2) * 0.1}>
               <p className="font-display text-2xl text-ink">{service.title}</p>
               <p className="mt-3 text-ink-soft">{service.text}</p>
+              {service.seance && (
+                <BookingCTA
+                  seance={service.seance}
+                  variant="outline"
+                  className="mt-4"
+                  aria-label={`Réserver une séance ${service.title.toLowerCase()}`}
+                >
+                  Réserver cette séance
+                </BookingCTA>
+              )}
               {service.action && (
                 <Link
                   to={service.action.to}
@@ -87,15 +98,8 @@ export default function Services() {
           ))}
         </div>
 
-        <Reveal delay={0.2} className="mt-16 border-t border-line pt-10 text-center">
-          <p className="font-display text-xl text-ink">
-            Contactez-moi si vous avez envie d'un shooting ou d'une idée
-          </p>
-          <Button to="/contact" className="mt-6">
-            Contactez-moi
-          </Button>
-        </Reveal>
       </section>
+      <BookingEndBlock />
     </div>
   )
 }

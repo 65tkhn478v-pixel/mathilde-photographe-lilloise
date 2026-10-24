@@ -1,5 +1,5 @@
 // Logique pure du panneau du jour : cases d'heures, chevauchements, résumé.
-import { DAY_START_TIMES, addMinutesToTime } from '../../../shared/booking.js'
+import { DAY_LAST_END, DAY_START_TIMES, SLOT_DURATIONS, addMinutesToTime } from '../../../shared/booking.js'
 import { timeKey } from '../../../shared/time.js'
 
 export const toMinutes = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
@@ -13,7 +13,9 @@ const DURATION_KEY = 'espace-mathilde:duree'
 
 export function readDuration() {
   try {
-    return localStorage.getItem(DURATION_KEY) === '90' ? 90 : 60
+    // Toute autre valeur (ex. « 90 », ancienne durée 1h30) retombe sur 1h.
+    const stored = Number(localStorage.getItem(DURATION_KEY))
+    return SLOT_DURATIONS.includes(stored) ? stored : SLOT_DURATIONS[0]
   } catch {
     return 60
   }
@@ -34,12 +36,19 @@ export function withLocalTimes(slots) {
 
 const overlaps = (a, b) => toMinutes(a.start) < toMinutes(b.end) && toMinutes(a.end) > toMinutes(b.start)
 
-/** Garde les nouvelles heures compatibles entre elles et avec l'existant (ordre chronologique). */
+const endsTooLate = (slot) => slot.end > DAY_LAST_END
+
+/**
+ * Garde les nouvelles heures compatibles entre elles, avec l'existant et avec
+ * la fin à 21h (ordre chronologique).
+ */
 export function fitNewStarts(starts, duration, kept) {
   const accepted = []
   for (const start of [...starts].sort()) {
     const slot = { start, end: addMinutesToTime(start, duration) }
-    if (!kept.some((k) => overlaps(k, slot)) && !accepted.some((a) => overlaps(a, slot))) accepted.push(slot)
+    if (!endsTooLate(slot) && !kept.some((k) => overlaps(k, slot)) && !accepted.some((a) => overlaps(a, slot))) {
+      accepted.push(slot)
+    }
   }
   return accepted
 }
@@ -79,6 +88,7 @@ export function buildCells({ existing, removedIds, newStarts, duration, readOnly
     let reason = null
     if (readOnly) reason = 'jour passé'
     else if (nowTime && start <= nowTime) reason = 'heure passée'
+    else if (!own && endsTooLate(candidate)) reason = 'finirait après 21h'
     else if (!own) {
       const clash = [...kept, ...fresh].find((o) => overlaps(o, candidate))
       if (clash) reason = `chevauche ${spokenRange(clash.start, clash.end)}`

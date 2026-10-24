@@ -4,6 +4,7 @@ import { MotionConfig } from 'framer-motion'
 import { Nav } from './components/Nav'
 import { Footer } from './components/Footer'
 import { ScrollToTop } from './components/ScrollToTop'
+import { MobileBookingBar } from './components/MobileBookingBar'
 import { Loading } from './components/ui/Notice'
 import Home from './pages/Home'
 import About from './pages/About'
@@ -49,6 +50,7 @@ function App() {
         </Suspense>
       </main>
       {!isAdmin && <Footer />}
+      {!isAdmin && <MobileBookingBar />}
     </MotionConfig>
   )
 }

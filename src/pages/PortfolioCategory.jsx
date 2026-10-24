@@ -2,7 +2,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Reveal } from '../components/Reveal'
 import { PortfolioGrid } from '../components/PortfolioGrid'
-import { Button } from '../components/Button'
+import { BookingEndBlock } from '../components/BookingEndBlock'
 import { CATEGORIES, PHOTOS } from '../data/portfolio'
 
 export default function PortfolioCategory() {
@@ -38,14 +38,12 @@ export default function PortfolioCategory() {
               Cette catégorie n'a pas encore de galerie dédiée. Elle sera mise en ligne dès que
               de nouvelles séances famille seront réalisées.
             </p>
-            <Button to="/contact" className="mt-8">
-              Réserver une séance famille
-            </Button>
           </div>
         ) : (
           <PortfolioGrid photos={PHOTOS[category.slug]} />
         )}
       </div>
+      {category.slug === 'mariage' ? <BookingEndBlock mariage /> : <BookingEndBlock seance={category.slug} />}
     </div>
   )
 }

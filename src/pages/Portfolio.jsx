@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Reveal } from '../components/Reveal'
 import { CATEGORIES } from '../data/portfolio'
+import { BookingEndBlock } from '../components/BookingEndBlock'
 
 export default function Portfolio() {
   usePageMeta({
@@ -57,6 +58,7 @@ export default function Portfolio() {
           ))}
         </div>
       </div>
+      <BookingEndBlock />
     </div>
   )
 }

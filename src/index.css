@@ -135,6 +135,14 @@
   }
 }
 
+/* Barre de réservation mobile : un élément qui reçoit le focus au clavier
+   n'est jamais laissé sous la barre. */
+@media (max-width: 1023px) {
+  html {
+    scroll-padding-bottom: 5rem;
+  }
+}
+
 /* Labels en capitales un peu plus grands sur desktop (11px → 12px). */
 @media (min-width: 768px) {
   :root {

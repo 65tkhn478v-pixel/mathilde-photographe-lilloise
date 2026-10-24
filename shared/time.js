@@ -169,3 +169,14 @@ export function addMonths(month, n) {
   const d = new Date(Date.UTC(y, m - 1 + n, 1))
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`
 }
+
+/** "15h" ou "15h30" (heure de Paris) */
+export function formatShortTime(value) {
+  const p = parisParts(toDate(value))
+  return p.minute ? `${p.hour}h${pad(p.minute)}` : `${p.hour}h`
+}
+
+/** "15h – 16h30" */
+export function formatShortRange(start, end) {
+  return `${formatShortTime(start)} – ${formatShortTime(end)}`
+}

@@ -22,7 +22,10 @@ import { notifyNewBooking } from './notify.js'
 const SLOT_TAKEN = "Ce créneau vient d'être demandé par quelqu'un d'autre. Choisissez un autre horaire."
 
 export async function getSlots(request, env) {
-  const slots = await availableSlots(env.DB, new Date().toISOString())
+  // ?limit=3 : les prochaines disponibilités de l'accueil (1 à 500).
+  const limit = Number(new URL(request.url).searchParams.get('limit'))
+  const max = Number.isInteger(limit) && limit >= 1 && limit <= 500 ? limit : 500
+  const slots = await availableSlots(env.DB, new Date().toISOString(), max)
   return json({ slots })
 }
 

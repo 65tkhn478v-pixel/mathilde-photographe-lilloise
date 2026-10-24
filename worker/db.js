@@ -57,16 +57,16 @@ export async function adminSlotById(db, id) {
 }
 
 /** Créneaux réservables : futurs, non fermés, sans demande active. */
-export async function availableSlots(db, nowIso) {
+export async function availableSlots(db, nowIso, limit = 500) {
   const { results } = await db
     .prepare(
       `SELECT s.id, s.start_at, s.end_at FROM slots s
        WHERE s.closed = 0 AND s.start_at > ?
          AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.slot_id = s.id AND b.status IN ${ACTIVE})
        ORDER BY s.start_at
-       LIMIT 500`
+       LIMIT ?`
     )
-    .bind(nowIso)
+    .bind(nowIso, limit)
     .all()
   return results
 }

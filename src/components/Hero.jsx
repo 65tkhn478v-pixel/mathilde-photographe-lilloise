@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Button } from './Button'
+import { BookingCTA } from './BookingCTA'
 import { HOOK, TAGLINE } from '../data/site'
 
 export function Hero() {
@@ -47,9 +48,7 @@ export function Hero() {
           transition={{ duration: 0.8, delay: 0.55 }}
           className="mt-9 flex flex-wrap justify-center gap-4"
         >
-          <Button to="/reserver" variant="inverse">
-            Réserver une séance
-          </Button>
+          <BookingCTA variant="inverse" />
           <Button to="/contact" variant="ghost">
             Me contacter
           </Button>

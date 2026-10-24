@@ -18,6 +18,7 @@ import {
   fitNewStarts,
   readDuration,
   shortRange,
+  shortTime,
   storeDuration,
   summary,
   withLocalTimes,
@@ -31,8 +32,8 @@ const sheetDialog =
   'fixed inset-x-4 bottom-4 z-[60] mx-auto max-w-md border border-line bg-paper p-6 sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2'
 
 /**
- * Panneau du jour : saisie rapide des créneaux (1h ou 1h30, heures de début
- * de 8h à 20h) et enchaînement des jours. Feuille plein écran sur mobile,
+ * Panneau du jour : saisie rapide des créneaux (1h ou 2h, heures de début
+ * de 8h à 20h, fin au plus tard à 21h) et enchaînement des jours. Feuille plein écran sur mobile,
  * panneau latéral sur desktop (Radix Dialog : focus piégé, retour du focus
  * au jour d'origine). Un jour = une seule requête PUT.
  */
@@ -141,12 +142,16 @@ export function DaySlotsPanel({ date, onClose, onChangeDate, onSaved, onExpired,
     setDuration(minutes)
     storeDuration(minutes)
     // Les heures non enregistrées suivent la nouvelle durée ; celles qui
-    // chevaucheraient alors un autre créneau sont retirées.
+    // chevaucheraient alors un autre créneau ou finiraient après 21h sont retirées.
     const kept = existing.filter((s) => !removedIds.has(s.id))
     const accepted = fitNewStarts(newStarts, minutes, kept).map((s) => s.start)
-    const dropped = newStarts.length - accepted.length
+    const dropped = newStarts.filter((s) => !accepted.includes(s))
     setDayDraft((d) => ({ ...d, newStarts: accepted }))
-    setHint(dropped ? `${dropped} heure${dropped > 1 ? 's' : ''} retirée${dropped > 1 ? 's' : ''} : chevauchement avec la nouvelle durée.` : null)
+    setHint(
+      dropped.length
+        ? `${dropped.map(shortTime).join(', ')} décoché${dropped.length > 1 ? 's' : ''} : chevauchement ou fin après 21h avec la nouvelle durée.`
+        : null
+    )
   }
 
   const clearable = existing.filter((s) => !s.booking && s.state !== 'past' && !removedIds.has(s.id))
@@ -219,7 +224,7 @@ export function DaySlotsPanel({ date, onClose, onChangeDate, onSaved, onExpired,
                 >
                   {[
                     ['60', '1h'],
-                    ['90', '1h30'],
+                    ['120', '2h'],
                   ].map(([value, label]) => (
                     <ToggleGroup.Item
                       key={value}
@@ -466,7 +471,7 @@ function HourCell({ cell, onToggle }) {
       aria-pressed={isExisting && cell.locked ? undefined : cell.pressed}
       aria-disabled={inactive || undefined}
       aria-label={cell.aria}
-      title={cell.reason ? `Indisponible : ${cell.reason}` : undefined}
+      title={cell.reason ? cell.reason.charAt(0).toUpperCase() + cell.reason.slice(1) : undefined}
       data-start={cell.start}
       className={clsx(
         'flex min-h-11 items-center justify-center gap-1 rounded-sm border px-1 py-1.5 text-center text-sm leading-tight transition-colors duration-100',
