@@ -17,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "mathilde-reservations",
-      "database_id": "81e5a685-02af-4b84-9aa3-0ee7a84395e0",
+      "database_id": "0ee2594a-7675-4422-8732-5f365d0daa65",
       "migrations_dir": "migrations"
     }
   ]

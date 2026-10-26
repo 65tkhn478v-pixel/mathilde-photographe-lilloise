@@ -1,44 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Pas de nom de domaine : site servi sur workers.dev (voir index.html). -->
+<!-- Domaine de production : mathilde-photographe-lilloise.lunaa-studio.fr (voir index.html). -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/</loc>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/a-propos</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/a-propos</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/portfolio</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/portfolio</loc>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/portfolio/mariage</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/portfolio/mariage</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/portfolio/grossesse</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/portfolio/grossesse</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/portfolio/naissance</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/portfolio/naissance</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/portfolio/famille</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/portfolio/famille</loc>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/services</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/services</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/reserver</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/reserver</loc>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mathilde-photographe-lilloise.h9759k6njr.workers.dev/contact</loc>
+    <loc>https://mathilde-photographe-lilloise.lunaa-studio.fr/contact</loc>
     <priority>0.8</priority>
   </url>
 </urlset>

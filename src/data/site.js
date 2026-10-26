@@ -2,9 +2,9 @@
 // ici : tarifs, avis, adresse précise, année de création, etc. n'existent
 // pas encore et ne doivent pas apparaître sur le site.
 
-// Pas de nom de domaine : le site est servi sur workers.dev (voir aussi
+// Domaine de production (voir aussi
 // index.html, public/sitemap.xml, public/robots.txt).
-export const SITE_URL = 'https://mathilde-photographe-lilloise.h9759k6njr.workers.dev'
+export const SITE_URL = 'https://mathilde-photographe-lilloise.lunaa-studio.fr'
 
 export const SITE_NAME = 'Mathilde Lecomte — Photographe'
 

@@ -40,8 +40,8 @@ npm run lint    # oxlint
   (`CONTACT_EMAIL`). À remplacer par un vrai envoi serveur (ex. Cloudflare
   Worker + Email Routing, ou un service comme Formspree) une fois
   l'hébergement choisi, pour plus de fiabilité.
-- **Nom de domaine** : aucun. Le site est servi sur
-  `https://mathilde-photographe-lilloise.h9759k6njr.workers.dev`, URL utilisée dans les balises SEO
+- **Nom de domaine** : le site est servi sur
+  `https://mathilde-photographe-lilloise.lunaa-studio.fr`, URL utilisée dans les balises SEO
   (`index.html`, `public/sitemap.xml`, `public/robots.txt`,
   `src/data/site.js`).
 - **Mentions légales** : statut juridique, SIRET, adresse précise et
@@ -179,27 +179,38 @@ données de test. Il n'agit que sur la base locale et n'est pas une migration.
 Le mot de passe en clair n'est écrit nulle part. Pour le changer, relancer
 `npm run admin:set-password` puis redémarrer `npm run dev:full`.
 
-### Mise en production (étapes NON exécutées)
+### Mise en production
 
-À faire par la personne qui gère le compte Cloudflare, dans cet ordre :
+La production est sur le **compte Cloudflare `65tkhn478v`** : Worker
+`mathilde-photographe-lilloise`, base D1 `mathilde-reservations`
+(`database_id` dans `wrangler.jsonc`), domaine
+`https://mathilde-photographe-lilloise.lunaa-studio.fr`.
 
-1. Créer la base distante :
-   `npx wrangler d1 create mathilde-reservations`
-2. Reporter l'identifiant affiché dans le `database_id` de `wrangler.jsonc`
-   (fait : base `mathilde-reservations` du compte de production).
-3. Appliquer les migrations sur la base distante :
-   `npx wrangler d1 migrations apply DB --remote`
-4. Définir les secrets (valeurs de `.dev.vars`, ou nouvelles valeurs générées
-   avec `npm run admin:set-password`) :
-   `npx wrangler secret put ADMIN_PASSWORD_HASH`
-   `npx wrangler secret put SESSION_SECRET`
-5. Déployer : `npx wrangler deploy` (ou via le build Git connecté).
-6. Si le déploiement crée une version sans la promouvoir (déploiements
-   progressifs / Workers Builds), promouvoir la version dans le dashboard
-   Cloudflare (Workers & Pages → le Worker → Deployments).
-7. Vérifier sur `https://mathilde-photographe-lilloise.h9759k6njr.workers.dev` :
-   connexion à `/espace-mathilde`, publication d'un créneau, demande test sur
-   `/reserver`, puis suppression de cette demande test.
+Le Worker est relié au dépôt GitHub : chaque push sur `main` lance la
+commande de déploiement
 
-Tout fonctionne sur `workers.dev` : aucun domaine, aucun service d'envoi de
-mail ni Cloudflare Access n'est nécessaire.
+```bash
+npx wrangler d1 migrations apply DB --remote && npx wrangler deploy
+```
+
+qui **applique d'abord les migrations** de `migrations/` à la base de
+production, puis déploie. Il n'y a donc rien à lancer à la main pour les
+migrations ; une nouvelle migration doit toujours être additive (ne jamais
+modifier une migration déjà appliquée).
+
+**Secrets à définir sur ce Worker** (Workers & Pages → le Worker → Settings →
+Variables and Secrets, type *Secret*, ou `npx wrangler secret put`) :
+
+- `ADMIN_PASSWORD_HASH` : hash du mot de passe de l'espace admin ;
+- `SESSION_SECRET` : secret de signature des sessions.
+
+Valeurs générées avec `npm run admin:set-password` (ou la commande Node
+autonome équivalente). Sans eux, le site public et `/reserver` fonctionnent,
+mais la connexion à `/espace-mathilde` affiche « Espace non configuré ».
+`RESEND_API_KEY` reste facultatif (voir « Notification de Mathilde »).
+
+Après un déploiement, vérifier dans Workers & Pages → le Worker →
+Deployments que le build est réussi (promouvoir la version si le
+déploiement est progressif), puis sur `https://mathilde-photographe-lilloise.lunaa-studio.fr` :
+connexion à `/espace-mathilde`, publication d'un créneau, demande test sur
+`/reserver`, puis suppression de cette demande test.
