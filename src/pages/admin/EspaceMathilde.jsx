@@ -180,7 +180,9 @@ export default function EspaceMathilde() {
               key={t.value}
               value={t.value}
               className={clsx(
-                'font-label -mb-px min-h-11 shrink-0 border-b-2 px-2.5 text-xs tracking-wide whitespace-nowrap uppercase focus-visible:outline-offset-[-2px] sm:px-5 sm:text-sm',
+                // relative : les textes pour lecteurs d'écran des badges restent
+                // dans la barre d'onglets défilante (pas de débordement sur mobile).
+                'font-label relative -mb-px min-h-11 shrink-0 border-b-2 px-2.5 text-xs tracking-wide whitespace-nowrap uppercase focus-visible:outline-offset-[-2px] sm:px-5 sm:text-sm',
                 'border-transparent text-ink data-[state=active]:border-ink'
               )}
             >

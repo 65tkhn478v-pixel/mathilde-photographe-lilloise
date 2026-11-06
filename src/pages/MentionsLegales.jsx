@@ -3,6 +3,7 @@ import { Reveal } from '../components/Reveal'
 import { BookingEndBlock } from '../components/BookingEndBlock'
 import { CONTACT_EMAIL } from '../data/site'
 import { RETENTION_MONTHS } from '../../shared/booking.js'
+import { GALLERY_RETENTION } from '../../shared/galleries.js'
 
 export default function MentionsLegales() {
   usePageMeta({
@@ -85,6 +86,44 @@ export default function MentionsLegales() {
                   {CONTACT_EMAIL}
                 </a>
                 .
+              </p>
+
+              {/* Durées par défaut à valider avec la cliente (GALLERY_RETENTION, shared/galleries.js). */}
+              <h3 id="galeries-clients" className="mt-6 font-display text-lg text-ink">
+                Galeries clients
+              </h3>
+              <p className="mt-2">
+                <strong className="font-normal italic">Données traitées.</strong> Votre nom et votre
+                adresse mail, les photos de votre séance, votre sélection et le commentaire que vous
+                laissez éventuellement.
+              </p>
+              <p className="mt-2">
+                <strong className="font-normal italic">Finalité.</strong> Vous permettre de choisir
+                vos photos, puis de récupérer les photos retouchées.
+              </p>
+              <p className="mt-2">
+                <strong className="font-normal italic">Accès.</strong> Uniquement vous (avec le lien et
+                le code d'accès de votre galerie) et Mathilde Lecomte. Les galeries ne sont ni publiques
+                ni référencées par les moteurs de recherche.
+              </p>
+              <p className="mt-2">
+                <strong className="font-normal italic">Hébergement.</strong> Le site et les photos sont
+                hébergés par Cloudflare, qui peut traiter des données en dehors de l'Union européenne
+                dans le cadre des garanties prévues par la réglementation.
+              </p>
+              <p className="mt-2">
+                <strong className="font-normal italic">Conservation.</strong> La sélection reste
+                ouverte {GALLERY_RETENTION.selectionDays} jours ; les photos livrées restent
+                téléchargeables {GALLERY_RETENTION.deliveryDays} jours. La galerie est ensuite supprimée
+                automatiquement, ou {GALLERY_RETENTION.undeliveredPurgeDays} jours après une sélection
+                qui n'a pas été livrée.
+              </p>
+              <p className="mt-2">
+                <strong className="font-normal italic">Suppression.</strong> Sur simple demande à{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="break-all underline hover:text-accent">
+                  {CONTACT_EMAIL}
+                </a>
+                , votre galerie est supprimée immédiatement et entièrement.
               </p>
             </section>
           </div>

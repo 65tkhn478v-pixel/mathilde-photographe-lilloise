@@ -16,6 +16,11 @@ export function GalleryLightbox({ photos, index, onIndex, onClose, srcOf, select
   const photo = open ? photos[index] : null
   const [drag, setDrag] = useState({ x: 0, y: 0 })
   const start = useRef(null)
+  // Dernière photo affichée : sa miniature reçoit le focus à la fermeture.
+  const lastPhotoId = useRef(null)
+  useEffect(() => {
+    if (photo) lastPhotoId.current = photo.id
+  }, [photo])
 
   // Précharge les photos voisines (aperçus 1600 px).
   useEffect(() => {
@@ -33,7 +38,11 @@ export function GalleryLightbox({ photos, index, onIndex, onClose, srcOf, select
   const onPointerDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return
     start.current = { x: e.clientX, y: e.clientY, id: e.pointerId }
-    e.currentTarget.setPointerCapture?.(e.pointerId)
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // Pointeur déjà relâché : le geste fonctionne sans capture.
+    }
   }
   const onPointerMove = (e) => {
     if (!start.current) return
@@ -60,7 +69,7 @@ export function GalleryLightbox({ photos, index, onIndex, onClose, srcOf, select
             if (e.key === 'ArrowLeft') go(-1)
           }}
           onCloseAutoFocus={(e) => {
-            const thumb = photo && document.querySelector(`[data-photo-id="${photo.id}"]`)
+            const thumb = lastPhotoId.current && document.querySelector(`[data-photo-id="${lastPhotoId.current}"]`)
             if (thumb) {
               e.preventDefault()
               thumb.focus()

@@ -115,6 +115,65 @@ Elle recontacte chaque client et confirme elle-même.
   (`RETENTION_MONTHS`, `shared/booking.js`), **durée à valider avec la
   cliente**. Purge manuelle depuis l'onglet Historique.
 
+## Galeries clients (branche `feature/galeries`, version de test)
+
+Après une séance, Mathilde dépose des **aperçus filigranés** dans une galerie
+privée ; le client y accède par **lien + code**, choisit ses photos, valide ;
+Mathilde dépose ensuite les **photos finales HD**, que le client télécharge.
+
+- **Admin** : onglet « Galeries » de `/espace-mathilde` (création, éventuellement
+  depuis une réservation confirmée ; dépôt ; partage ; suivi de la sélection ;
+  copie des noms de fichiers pour Lightroom ; livraison ; conservation ;
+  suppression immédiate).
+- **Client** : `/galerie/<slug>` (code → sélection avec cœurs, visionneuse,
+  validation → téléchargement des photos finales).
+- **Aucun original brut en ligne** : les aperçus (600 px et 1600 px, WebP,
+  filigrane) sont générés dans le navigateur de Mathilde (Web Worker,
+  `src/lib/gallery/`). Les finales HD sont envoyées telles quelles mais **sans
+  EXIF/GPS/XMP/IPTC**, retirés sans recompression (`jpegMeta.js`, profil ICC et
+  orientation conservés).
+- **Stockage** : Cloudflare R2 (binding `GALLERY_BUCKET`, bucket
+  `mathilde-galeries`), jamais public : chaque image est servie par le Worker
+  après vérification de la session et du statut de la galerie.
+- **Accès** : slug aléatoire (20 caractères), code de 8 caractères stocké haché
+  (HMAC avec `SESSION_SECRET`), session client par galerie (cookie signé
+  30 jours), 10 essais de code par IP et par galerie en 15 min. Générer un
+  nouveau code invalide l'ancien et toutes les sessions client.
+  ⚠ Changer `SESSION_SECRET` invalide aussi tous les codes de galerie.
+- **Conservation (à valider avec la cliente)** : `GALLERY_RETENTION` dans
+  `shared/galleries.js` — sélection 30 jours, téléchargement 90 jours après la
+  livraison, suppression ensuite (ou 60 jours après une sélection non livrée),
+  aperçus supprimés 7 jours après la livraison. Nettoyage quotidien par Cron
+  Trigger (`wrangler.jsonc`), ou bouton/route `POST /api/admin/galleries/cleanup`.
+- **« Tout télécharger »** : ZIP construit en streaming dans le navigateur
+  (`client-zip`, sans compression) et écrit directement sur le disque quand
+  l'API File System Access existe (Chrome, Edge sur ordinateur) ; sinon
+  téléchargements successifs (Safari, Firefox, Android) ; sur iPhone, parcours
+  photo par photo expliqué dans la galerie. Aucun ZIP côté serveur.
+- **Notifications** : sélection validée → mail à Mathilde par le même mécanisme
+  que les réservations (Resend, `RESEND_API_KEY`, facultatif). Les clients ne
+  reçoivent pas de mail du site (l'expéditeur de test de Resend ne peut écrire
+  qu'à l'adresse du compte) : l'admin propose « Copier le message de
+  livraison ».
+- **SEO** : `/galerie/*` passe par le Worker, qui retire toutes les balises
+  Open Graph/Twitter et ajoute `noindex, nofollow, noarchive` (balise + en-tête
+  `X-Robots-Tag`) ; `Disallow: /galerie/` dans `robots.txt`.
+
+### Mise en production des galeries (étapes NON exécutées)
+
+À faire sur le compte Cloudflare `65tkhn478v`, dans cet ordre, **avant** de
+fusionner `feature/galeries` dans `main` :
+
+1. Créer le bucket R2 privé : `npx wrangler r2 bucket create mathilde-galeries`
+   (ne pas activer d'accès public ni de domaine public sur ce bucket).
+2. Vérifier que les secrets `ADMIN_PASSWORD_HASH` et `SESSION_SECRET` existent
+   déjà sur le Worker (aucun nouveau secret n'est nécessaire).
+3. Fusionner `feature/galeries` dans `main` : le déploiement applique alors la
+   migration `0003_galleries.sql` (additive : nouvelles tables uniquement) et
+   enregistre le Cron Trigger quotidien.
+4. Vérifier : création d'une galerie de test, dépôt de quelques photos,
+   accès client, puis suppression de la galerie de test.
+
 ### Notification de Mathilde par mail (facultative, désactivée par défaut)
 
 À chaque nouvelle demande, le Worker peut envoyer un mail court à

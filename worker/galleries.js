@@ -544,6 +544,20 @@ export async function adminPhoto(request, env, { id, pid, version }) {
 
 // ---- Client -----------------------------------------------------------------
 
+/**
+ * Photo de couverture : après la livraison, toujours une photo finale (sans
+ * filigrane) — la couverture choisie si c'est une finale, sinon la première.
+ */
+async function coverPhoto(db, g, status) {
+  if (!g.cover_id) return null
+  const cover = await db.prepare('SELECT id, kind FROM gallery_photos WHERE id = ?').bind(g.cover_id).first()
+  if (status !== 'delivered' || cover?.kind === 'final') return cover
+  return db
+    .prepare("SELECT id, kind FROM gallery_photos WHERE gallery_id = ? AND kind = 'final' AND complete = 1 ORDER BY sort_key LIMIT 1")
+    .bind(g.id)
+    .first()
+}
+
 /** Informations publiques minimales (écran d'accès). */
 export async function galleryPublic(request, env, { slug }) {
   const access = await clientAccess(request, env, slug)
@@ -554,8 +568,8 @@ export async function galleryPublic(request, env, { slug }) {
 /** Mini couverture floutée (32 px) affichée derrière l'écran de code. */
 export async function galleryCoverBlur(request, env, { slug }) {
   const access = await clientAccess(request, env, slug)
-  if (!access.g || !access.g.cover_id) return unavailable()
-  const photo = await env.DB.prepare('SELECT id, kind FROM gallery_photos WHERE id = ?').bind(access.g.cover_id).first()
+  const photo = access.g && (await coverPhoto(env.DB, access.g, access.status))
+  if (!photo) return unavailable()
   return serveObject(env, request, objectKey(access.g, photo.kind, photo.id, 'blur'), { maxAge: 3600 })
 }
 
@@ -617,7 +631,7 @@ export async function galleryContent(request, env, { slug }) {
     deadline_passed: g.selection_deadline <= nowIso,
     selection_validated_at: g.selection_validated_at,
     delivery_expires_at: g.delivery_expires_at,
-    cover_id: g.cover_id,
+    cover_id: (await coverPhoto(env.DB, g, status))?.id ?? null,
     photos: photos.map((p) => ({
       id: p.id,
       w: p.width,
