@@ -6,9 +6,14 @@ import * as admin from './admin.js'
 import { hasValidSession, isSameOrigin } from './auth.js'
 import { GENERIC_ERROR, error } from './http.js'
 import { createBooking, getSlots } from './public.js'
+import * as galleries from './galleries.js'
 
 const ID = '(?<id>\\d+)'
 const DATE = '(?<date>\\d{4}-\\d{2}-\\d{2})'
+const SLUG = '(?<slug>[a-z0-9]{16,40})'
+const PID = '(?<pid>\\d+)'
+const VERSION = '(?<version>thumb|preview|blur|hd)'
+const GAL = `/api/admin/galleries/${ID}`
 
 // [méthode, chemin, handler, options]
 const ROUTES = [
@@ -35,6 +40,33 @@ const ROUTES = [
 
   ['GET', '/api/admin/history', admin.history],
   ['POST', '/api/admin/purge', admin.purge],
+
+  // Galeries clients — admin
+  ['GET', '/api/admin/galleries', galleries.listGalleries],
+  ['POST', '/api/admin/galleries', galleries.createGallery],
+  ['GET', '/api/admin/galleries/bookings', galleries.bookingsForGallery],
+  ['POST', '/api/admin/galleries/cleanup', galleries.cleanupNow],
+  ['GET', GAL, galleries.galleryDetail],
+  ['PATCH', GAL, galleries.updateGallery],
+  ['DELETE', GAL, galleries.deleteGallery],
+  ['POST', `${GAL}/code`, galleries.regenerateCode],
+  ['POST', `${GAL}/open`, galleries.openSelection],
+  ['POST', `${GAL}/reopen`, galleries.reopenSelection],
+  ['POST', `${GAL}/deliver`, galleries.deliverGallery],
+  ['POST', `${GAL}/photos`, galleries.registerPhoto],
+  ['PUT', `${GAL}/photos/${PID}/${VERSION}`, galleries.uploadVersion],
+  ['GET', `${GAL}/photos/${PID}/${VERSION}`, galleries.adminPhoto],
+  ['DELETE', `${GAL}/photos/${PID}`, galleries.deletePhoto],
+
+  // Galeries clients — client (accès par lien + code, contrôles dans le module)
+  ['GET', `/api/galerie/${SLUG}`, galleries.galleryPublic, { public: true }],
+  ['GET', `/api/galerie/${SLUG}/couverture`, galleries.galleryCoverBlur, { public: true }],
+  ['POST', `/api/galerie/${SLUG}/acces`, galleries.galleryLogin, { public: true }],
+  ['GET', `/api/galerie/${SLUG}/contenu`, galleries.galleryContent, { public: true }],
+  ['PUT', `/api/galerie/${SLUG}/selection/${PID}`, galleries.selectPhoto, { public: true }],
+  ['DELETE', `/api/galerie/${SLUG}/selection/${PID}`, galleries.unselectPhoto, { public: true }],
+  ['POST', `/api/galerie/${SLUG}/valider`, galleries.validateSelection, { public: true }],
+  ['GET', `/api/galerie/${SLUG}/photos/${PID}/${VERSION}`, galleries.clientPhoto, { public: true }],
 ].map(([method, path, handler, options = {}]) => ({
   method,
   pattern: new RegExp(`^${path}$`),
@@ -45,19 +77,28 @@ const ROUTES = [
 async function route(request, env, ctx) {
   const { pathname } = new URL(request.url)
   const matches = ROUTES.filter((r) => r.pattern.test(pathname))
-  if (matches.length === 0) return error(404, 'Adresse inconnue.')
+  if (matches.length === 0) {
+    // Même réponse qu'une galerie indisponible : aucune énumération possible.
+    if (pathname.startsWith('/api/galerie/')) {
+      return error(404, 'Cette galerie n’est plus disponible. Écrivez-moi si besoin.', { code: 'unavailable' })
+    }
+    return error(404, 'Adresse inconnue.')
+  }
   const match = matches.find((r) => r.method === request.method)
   if (!match) return error(405, 'Méthode non autorisée.')
 
-  const isAdmin = pathname.startsWith('/api/admin/')
+  // CSRF : en plus des cookies SameSite, toute requête modifiante de l'admin
+  // ou d'une galerie doit venir du site lui-même (en-tête Origin).
+  const guarded = pathname.startsWith('/api/admin/') || pathname.startsWith('/api/galerie/')
   const mutating = request.method !== 'GET' && request.method !== 'HEAD'
-  if (isAdmin && mutating && !isSameOrigin(request)) return error(403, 'Requête refusée.')
+  if (guarded && mutating && !isSameOrigin(request)) return error(403, 'Requête refusée.')
   if (!match.options.public && !(await hasValidSession(request, env))) {
     return error(401, 'Votre session a expiré. Reconnectez-vous.')
   }
 
   const params = match.pattern.exec(pathname).groups ?? {}
   if (params.id) params.id = Number(params.id)
+  if (params.pid) params.pid = Number(params.pid)
   return match.handler(request, env, params, ctx)
 }
 
@@ -70,5 +111,10 @@ export default {
       console.error('api_error', err?.name, err?.message)
       return error(500, GENERIC_ERROR)
     }
+  },
+
+  // Cron quotidien (wrangler.jsonc) : nettoyage RGPD des galeries.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(galleries.runGalleryCleanup(env))
   },
 }

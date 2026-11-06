@@ -20,5 +20,19 @@
       "database_id": "0ee2594a-7675-4422-8732-5f365d0daa65",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  // Galeries clients : photos privées (aperçus filigranés, finales HD).
+  // Bucket non public, lu uniquement par le Worker après vérification de la
+  // session. À créer sur le compte de production avant le merge dans main :
+  // `npx wrangler r2 bucket create mathilde-galeries` (voir README).
+  "r2_buckets": [
+    {
+      "binding": "GALLERY_BUCKET",
+      "bucket_name": "mathilde-galeries"
+    }
+  ],
+  // Nettoyage quotidien des galeries (RGPD) : expiration, purge D1 + R2.
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  }
 }

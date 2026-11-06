@@ -64,7 +64,11 @@ export function logout() {
 }
 
 export async function session(request, env) {
-  return json({ authenticated: true, pending_count: await pendingCount(env.DB) })
+  const retouch = await env.DB
+    .prepare("SELECT COUNT(*) AS n FROM galleries WHERE status = 'selection_validated' AND purge_at > ?")
+    .bind(new Date().toISOString())
+    .first()
+  return json({ authenticated: true, pending_count: await pendingCount(env.DB), galleries_to_retouch: retouch.n })
 }
 
 // ---- Créneaux --------------------------------------------------------------

@@ -4,3 +4,7 @@
   X-Robots-Tag: noindex, nofollow
 /espace-mathilde/*
   X-Robots-Tag: noindex, nofollow
+
+# Galeries clients : jamais indexées, ni archivées.
+/galerie/*
+  X-Robots-Tag: noindex, nofollow, noarchive
