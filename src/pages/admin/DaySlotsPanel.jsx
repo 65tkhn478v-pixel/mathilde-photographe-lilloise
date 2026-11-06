@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import * as ToggleGroup from '@radix-ui/react-toggle-group'
@@ -39,6 +39,10 @@ const sheetDialog =
  */
 export function DaySlotsPanel({ date, onClose, onChangeDate, onSaved, onExpired, onFeedback, onGoToRequests, returnFocus }) {
   const reduceMotion = useReducedMotion()
+  const lastDate = useRef(null)
+  useEffect(() => {
+    if (date) lastDate.current = date
+  }, [date])
   const [duration, setDuration] = useState(readDuration)
   const [direction, setDirection] = useState(1)
   // Brouillon du jour affiché ; un brouillon d'un autre jour est ignoré.
@@ -174,9 +178,14 @@ export function DaySlotsPanel({ date, onClose, onChangeDate, onSaved, onExpired,
         <Dialog.Content
           aria-describedby={undefined}
           onCloseAutoFocus={(e) => {
-            if (returnFocus?.current) {
+            // Le bouton du jour d'origine peut avoir été remplacé (changement de
+            // mois pendant l'enchaînement des jours) : on vise alors le jour affiché.
+            const target = returnFocus?.current?.isConnected
+              ? returnFocus.current
+              : document.querySelector(`[data-day="${lastDate.current}"]`)
+            if (target) {
               e.preventDefault()
-              returnFocus.current.focus()
+              target.focus()
             }
           }}
           className="day-sheet fixed inset-0 z-50 flex flex-col bg-paper md:inset-y-0 md:right-0 md:left-auto md:w-[30rem] md:border-l md:border-line"

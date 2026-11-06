@@ -140,6 +140,7 @@ export function MonthCalendar({ month, title, days, slotsByDay, selected, focusK
                       <button
                         type="button"
                         ref={buttonRef(key)}
+                        data-day={key}
                         tabIndex={key === focusKey ? 0 : -1}
                         aria-label={describeDay(key, slotsByDay.get(key) ?? [])}
                         aria-current={key === today ? 'date' : undefined}
