@@ -74,8 +74,31 @@ const ROUTES = [
   options,
 }))
 
+/**
+ * Pages /galerie/* : même application React, mais sans balise Open Graph ni
+ * Twitter (l'aperçu d'un lien partagé n'affiche aucune photo), avec noindex.
+ */
+async function galleryPage(request, env) {
+  const response = await env.ASSETS.fetch(new Request(new URL('/', request.url), request))
+  const rewritten = new HTMLRewriter()
+    .on('meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"], script[type="application/ld+json"]', {
+      element: (el) => el.remove(),
+    })
+    .on('head', {
+      element: (el) => el.append('<meta name="robots" content="noindex, nofollow, noarchive" />', { html: true }),
+    })
+    .on('title', { element: (el) => el.setInnerContent('Galerie — Mathilde Lecomte') })
+    .transform(response)
+  const headers = new Headers(rewritten.headers)
+  headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
+  headers.set('Cache-Control', 'no-store')
+  headers.set('Referrer-Policy', 'no-referrer')
+  return new Response(rewritten.body, { status: 200, headers })
+}
+
 async function route(request, env, ctx) {
   const { pathname } = new URL(request.url)
+  if (pathname.startsWith('/galerie/')) return galleryPage(request, env)
   const matches = ROUTES.filter((r) => r.pattern.test(pathname))
   if (matches.length === 0) {
     // Même réponse qu'une galerie indisponible : aucune énumération possible.

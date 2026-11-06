@@ -10,8 +10,11 @@
   },
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    // /galerie/* passe aussi par le Worker : il retire les balises Open Graph
+    // (aucune photo dans l'aperçu d'un lien partagé) et ajoute le noindex.
+    "run_worker_first": ["/api/*", "/galerie/*"]
   },
   "d1_databases": [
     {

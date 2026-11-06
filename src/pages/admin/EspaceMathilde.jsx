@@ -13,12 +13,14 @@ import { CalendarTab } from './CalendarTab'
 import { Toast } from './Toast'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { HistoryTab } from './HistoryTab'
+import { GalleriesTab } from './galleries/GalleriesTab'
 
 const TABS = [
   { value: 'calendrier', label: 'Calendrier' },
   { value: 'demandes', label: 'Demandes' },
   { value: 'creneaux', label: 'Mes créneaux' },
   { value: 'historique', label: 'Historique' },
+  { value: 'galeries', label: 'Galeries' },
 ]
 const TAB_KEY = 'espace-mathilde:onglet'
 
@@ -55,6 +57,8 @@ export default function EspaceMathilde() {
   const [signedOut, setSignedOut] = useState(false)
   const [expired, setExpired] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
+  // Galeries dont la sélection vient d'être validée (à retoucher).
+  const [galleryCount, setGalleryCount] = useState(0)
   const [tab, setTab] = useState(readStoredTab)
   const [toast, setToast] = useState(null)
   const onFeedback = useCallback((feedback) => setToast({ ...feedback, id: Date.now() }), [])
@@ -77,6 +81,7 @@ export default function EspaceMathilde() {
   const session = useApiData('/api/admin/session', {
     onData: (data) => {
       setPendingCount(data.pending_count)
+      setGalleryCount(data.galleries_to_retouch ?? 0)
       // Onglet par défaut : les demandes s'il y en a en attente.
       setTab((current) => current ?? (data.pending_count > 0 ? 'demandes' : 'calendrier'))
     },
@@ -180,6 +185,12 @@ export default function EspaceMathilde() {
               )}
             >
               {t.label}
+              {t.value === 'galeries' && galleryCount > 0 && (
+                <span className="ml-2 rounded-full border border-confirmed-line bg-confirmed-bg px-1.5 text-xs text-confirmed">
+                  {galleryCount}
+                  <span className="sr-only"> sélection{galleryCount > 1 ? 's' : ''} à retoucher</span>
+                </span>
+              )}
               {t.value === 'demandes' && pendingCount > 0 && (
                 <span className="ml-2 rounded-full border border-pending-line bg-pending-bg px-1.5 text-xs text-pending">
                   {pendingCount}
@@ -200,6 +211,9 @@ export default function EspaceMathilde() {
         </Tabs.Content>
         <Tabs.Content value="historique" className="pt-6 focus-visible:outline-none">
           <HistoryTab {...shared} />
+        </Tabs.Content>
+        <Tabs.Content value="galeries" className="pt-6 focus-visible:outline-none">
+          <GalleriesTab onExpired={onExpired} onFeedback={onFeedback} onGalleryCount={setGalleryCount} />
         </Tabs.Content>
       </Tabs.Root>
       <Toast toast={toast} onDone={clearToast} />
