@@ -159,13 +159,15 @@ Mathilde dépose ensuite les **photos finales HD**, que le client télécharge.
   Open Graph/Twitter et ajoute `noindex, nofollow, noarchive` (balise + en-tête
   `X-Robots-Tag`) ; `Disallow: /galerie/` dans `robots.txt`.
 
-### Mise en production des galeries (étapes NON exécutées)
+### Mise en production des galeries
 
-À faire sur le compte Cloudflare `65tkhn478v`, dans cet ordre, **avant** de
-fusionner `feature/galeries` dans `main` :
+Sur le compte Cloudflare `65tkhn478v` :
 
-1. Créer le bucket R2 privé : `npx wrangler r2 bucket create mathilde-galeries`
-   (ne pas activer d'accès public ni de domaine public sur ce bucket).
+1. Bucket R2 privé, juridiction EU (fait) :
+   `npx wrangler r2 bucket create mathilde-galeries --jurisdiction eu`
+   (aucun accès public ni domaine public). Le binding porte
+   `"jurisdiction": "eu"` dans `wrangler.jsonc` ; la juridiction d'un bucket
+   ne peut pas être changée après sa création.
 2. Vérifier que les secrets `ADMIN_PASSWORD_HASH` et `SESSION_SECRET` existent
    déjà sur le Worker (aucun nouveau secret n'est nécessaire).
 3. Fusionner `feature/galeries` dans `main` : le déploiement applique alors la

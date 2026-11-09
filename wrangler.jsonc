@@ -26,12 +26,13 @@
   ],
   // Galeries clients : photos privées (aperçus filigranés, finales HD).
   // Bucket non public, lu uniquement par le Worker après vérification de la
-  // session. À créer sur le compte de production avant le merge dans main :
-  // `npx wrangler r2 bucket create mathilde-galeries` (voir README).
+  // session. Bucket créé avec la juridiction EU (données stockées dans l'UE) :
+  // `npx wrangler r2 bucket create mathilde-galeries --jurisdiction eu`.
   "r2_buckets": [
     {
       "binding": "GALLERY_BUCKET",
-      "bucket_name": "mathilde-galeries"
+      "bucket_name": "mathilde-galeries",
+      "jurisdiction": "eu"
     }
   ],
   // Nettoyage quotidien des galeries (RGPD) : expiration, purge D1 + R2.

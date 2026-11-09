@@ -107,9 +107,10 @@ export default function MentionsLegales() {
                 ni référencées par les moteurs de recherche.
               </p>
               <p className="mt-2">
-                <strong className="font-normal italic">Hébergement.</strong> Le site et les photos sont
-                hébergés par Cloudflare, qui peut traiter des données en dehors de l'Union européenne
-                dans le cadre des garanties prévues par la réglementation.
+                <strong className="font-normal italic">Hébergement.</strong> Les photos sont stockées par
+                Cloudflare dans l'Union européenne. Le site et les autres données de la galerie (nom,
+                adresse e-mail, sélection) sont hébergés par Cloudflare, qui peut les traiter en dehors
+                de l'Union européenne dans le cadre des garanties prévues par la réglementation.
               </p>
               <p className="mt-2">
                 <strong className="font-normal italic">Conservation.</strong> La sélection reste
