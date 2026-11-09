@@ -19,13 +19,16 @@ import NotFound from './pages/NotFound'
 // pas le bundle de l'accueil.
 const Reserver = lazy(() => import('./pages/Reserver'))
 const EspaceMathilde = lazy(() => import('./pages/admin/EspaceMathilde'))
+// Galeries clients : chargées seulement à l'ouverture d'un lien de galerie.
+const Galerie = lazy(() => import('./pages/Galerie'))
 
 export const ADMIN_PATH = '/espace-mathilde'
 
 function App() {
   const { pathname } = useLocation()
   // L'espace admin a sa propre en-tête, sans la navigation publique.
-  const isAdmin = pathname.startsWith(ADMIN_PATH)
+  // Espace admin et galeries clients : plein écran, sans la navigation publique.
+  const isAdmin = pathname.startsWith(ADMIN_PATH) || pathname.startsWith('/galerie/')
 
   return (
     // reducedMotion="user" désactive automatiquement les animations Framer
@@ -45,6 +48,7 @@ function App() {
             <Route path="/reserver" element={<Reserver />} />
             <Route path="/mentions-legales" element={<MentionsLegales />} />
             <Route path={ADMIN_PATH} element={<EspaceMathilde />} />
+            <Route path="/galerie/:slug" element={<Galerie />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
