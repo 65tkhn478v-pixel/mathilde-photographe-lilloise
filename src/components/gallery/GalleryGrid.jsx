@@ -3,9 +3,10 @@ import { motion, useReducedMotion } from 'framer-motion'
 import clsx from 'clsx'
 import { StatusIcon } from '../ui/StatusBadge'
 import { justifyRows, targetRowHeight } from './justify'
+import { PROTECTED_CLASS, protectedMedia, protectionHandlers } from './protection'
 
 /** Image chargée seulement à l'approche de l'écran (IntersectionObserver). */
-function LazyImage({ src, alt, className }) {
+function LazyImage({ src, alt, className, protect }) {
   const ref = useRef(null)
   // Sans IntersectionObserver (très anciens navigateurs) : chargement direct.
   const [visible, setVisible] = useState(() => !('IntersectionObserver' in window))
@@ -30,7 +31,7 @@ function LazyImage({ src, alt, className }) {
       src={visible ? src : undefined}
       alt={alt}
       decoding="async"
-      draggable={false}
+      {...protectedMedia(protect)}
       className={clsx('h-full w-full bg-mist object-cover transition-opacity duration-200', visible ? 'opacity-100' : 'opacity-0', className)}
     />
   )
@@ -78,7 +79,7 @@ export function HeartButton({ selected, onToggle, label, className, large = fals
  * Grille justifiée des photos. Les photos occupent tout l'espace ; un seul
  * bouton par photo (cœur pendant la sélection, téléchargement après livraison).
  */
-export function GalleryGrid({ photos, total, indexOf, srcOf, onOpen, selection, onToggle, onDownload, canSelect }) {
+export function GalleryGrid({ photos, total, indexOf, srcOf, onOpen, selection, onToggle, onDownload, canSelect, protect = false }) {
   const containerRef = useRef(null)
   const [width, setWidth] = useState(0)
   useLayoutEffect(() => {
@@ -94,7 +95,7 @@ export function GalleryGrid({ photos, total, indexOf, srcOf, onOpen, selection, 
   const rows = width ? justifyRows(photos, width, targetRowHeight(width), gap) : []
 
   return (
-    <div ref={containerRef} className="w-full" data-testid="grille">
+    <div ref={containerRef} className={clsx('w-full', protect && PROTECTED_CLASS)} data-testid="grille" {...protectionHandlers(protect)}>
       {rows.map((row, r) => (
         <div key={r} className="flex" style={{ gap, marginBottom: gap, height: row.height }}>
           {row.items.map(({ photo, width: w, height: h }) => {
@@ -109,7 +110,7 @@ export function GalleryGrid({ photos, total, indexOf, srcOf, onOpen, selection, 
                   aria-label={`Ouvrir la photo ${index + 1} sur ${total}`}
                   data-photo-id={photo.id}
                 >
-                  <LazyImage src={srcOf(photo, 'thumb')} alt={`Photo ${index + 1} sur ${total}`} />
+                  <LazyImage src={srcOf(photo, 'thumb')} alt={`Photo ${index + 1} sur ${total}`} protect={protect} />
                 </button>
                 {selected && <span className="pointer-events-none absolute inset-0 ring-2 ring-paper ring-inset" aria-hidden="true" />}
                 {onToggle && (canSelect || selected) && (

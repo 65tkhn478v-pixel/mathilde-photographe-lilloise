@@ -5,6 +5,7 @@ import { PortfolioPreview } from '../components/PortfolioPreview'
 import { Philosophy } from '../components/Philosophy'
 import { BookingEndBlock } from '../components/BookingEndBlock'
 import { NextAvailabilities } from '../components/NextAvailabilities'
+import { Testimonials } from '../components/Testimonials'
 
 export default function Home() {
   usePageMeta({
@@ -20,6 +21,7 @@ export default function Home() {
       <Hero />
       <AboutTeaser />
       <PortfolioPreview />
+      <Testimonials variant="home" />
       <NextAvailabilities />
       <Philosophy />
       <BookingEndBlock />

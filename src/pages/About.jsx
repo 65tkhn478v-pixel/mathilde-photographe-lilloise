@@ -1,6 +1,7 @@
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Reveal } from '../components/Reveal'
 import { BookingEndBlock } from '../components/BookingEndBlock'
+import { Testimonials } from '../components/Testimonials'
 
 export default function About() {
   usePageMeta({
@@ -109,6 +110,7 @@ export default function About() {
           </Reveal>
         </div>
       </section>
+      <Testimonials variant="full" />
       <BookingEndBlock />
     </div>
   )

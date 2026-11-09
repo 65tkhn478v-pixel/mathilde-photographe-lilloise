@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { motion, useReducedMotion } from 'framer-motion'
 import { StatusIcon } from '../ui/StatusBadge'
 import { HeartButton } from './GalleryGrid'
+import { PROTECTED_CLASS, protectedMedia, protectionHandlers } from './protection'
 
 /**
  * Visionneuse plein écran : glissement gauche / droite (suit le doigt),
@@ -10,7 +11,7 @@ import { HeartButton } from './GalleryGrid'
  * voisines préchargées. Radix Dialog : focus piégé, retour du focus à la
  * miniature d'origine. Sur mesure (pointer events), sans bibliothèque.
  */
-export function GalleryLightbox({ photos, index, onIndex, onClose, srcOf, selection, onToggle, canSelect, onDownload }) {
+export function GalleryLightbox({ photos, index, onIndex, onClose, srcOf, selection, onToggle, canSelect, onDownload, protect = false }) {
   const reduceMotion = useReducedMotion()
   const open = index != null
   const photo = open ? photos[index] : null
@@ -48,9 +49,11 @@ export function GalleryLightbox({ photos, index, onIndex, onClose, srcOf, select
     if (!start.current) return
     setDrag({ x: e.clientX - start.current.x, y: Math.max(0, e.clientY - start.current.y) })
   }
-  const onPointerUp = () => {
+  const onPointerUp = (e) => {
     if (!start.current) return
-    const { x, y } = drag
+    // Position du relâchement (et non le dernier rendu, qui peut retarder d'un événement).
+    const x = e.clientX - start.current.x
+    const y = Math.max(0, e.clientY - start.current.y)
     start.current = null
     setDrag({ x: 0, y: 0 })
     if (y > 110 && y > Math.abs(x)) return onClose()
@@ -100,7 +103,8 @@ export function GalleryLightbox({ photos, index, onIndex, onClose, srcOf, select
               </div>
 
               <div
-                className="relative flex min-h-0 flex-1 touch-none items-center justify-center overflow-hidden select-none"
+                className={`relative flex min-h-0 flex-1 touch-none items-center justify-center overflow-hidden select-none ${protect ? PROTECTED_CLASS : ''}`}
+                {...protectionHandlers(protect)}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
@@ -115,12 +119,17 @@ export function GalleryLightbox({ photos, index, onIndex, onClose, srcOf, select
                   src={srcOf(photo, 'preview')}
                   alt={`Photo ${index + 1} sur ${photos.length}`}
                   draggable={false}
+                  {...protectedMedia(protect)}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 - Math.min(drag.y / 400, 0.5) }}
                   transition={{ duration: reduceMotion ? 0 : 0.15 }}
                   style={{ transform: `translate(${drag.x}px, ${drag.y}px)` }}
                   className="max-h-full max-w-full object-contain"
                 />
+                {/* Calque transparent : le clic droit ou l'appui long vise le
+                    calque, pas l'image. Ni focusable ni lu ; les gestes
+                    remontent au conteneur. */}
+                {protect && <div className="absolute inset-0" aria-hidden="true" data-protege="" data-testid="calque-protection" />}
                 <button
                   type="button"
                   onClick={() => go(-1)}

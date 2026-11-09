@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Notice } from '../ui/Notice'
+import { PROTECTED_CLASS, protectedMedia, protectionHandlers } from './protection'
 
-/** Écran de confirmation : miniatures choisies, mot facultatif, avertissement non bloquant. */
+/** Écran de confirmation : miniatures choisies (aperçus protégés), mot facultatif, avertissement non bloquant. */
 export function ValidateDialog({ open, onOpenChange, photos, max, srcOf, onConfirm, busy, error }) {
   const [comment, setComment] = useState('')
   const remaining = max - photos.length
@@ -22,10 +23,10 @@ export function ValidateDialog({ open, onOpenChange, photos, max, srcOf, onConfi
                 Vous pouvez encore en choisir {remaining}. Valider quand même ?
               </Notice>
             )}
-            <ul className="mt-4 grid grid-cols-4 gap-1 sm:grid-cols-6">
+            <ul className={`mt-4 grid grid-cols-4 gap-1 sm:grid-cols-6 ${PROTECTED_CLASS}`} {...protectionHandlers(true)}>
               {photos.map((p) => (
                 <li key={p.id} className="aspect-square overflow-hidden bg-mist">
-                  <img src={srcOf(p, 'thumb')} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  <img src={srcOf(p, 'thumb')} alt="" loading="lazy" className="h-full w-full object-cover" {...protectedMedia(true)} />
                 </li>
               ))}
             </ul>

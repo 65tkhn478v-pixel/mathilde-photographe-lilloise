@@ -115,7 +115,17 @@ Elle recontacte chaque client et confirme elle-même.
   (`RETENTION_MONTHS`, `shared/booking.js`), **durée à valider avec la
   cliente**. Purge manuelle depuis l'onglet Historique.
 
-## Galeries clients (branche `feature/galeries`, version de test)
+## Témoignages
+
+Section « Ils m'ont fait confiance » : 3 plus récents sur l'accueil (après le
+portfolio), tous sur `/a-propos#temoignages`. Données dans
+`src/data/temoignages.js` (mode d'emploi en tête du fichier) : `nom`, `date`
+(`AAAA-MM`), `message`, `seance` facultative. **Tableau vide = section
+invisible partout.** N'y mettre que de vrais messages, avec l'accord de la
+cliente pour publier son nom. Pas de balisage Schema.org `Review` (avis publiés
+par l'entreprise elle-même : non éligibles aux étoiles Google).
+
+## Galeries clients
 
 Après une séance, Mathilde dépose des **aperçus filigranés** dans une galerie
 privée ; le client y accède par **lien + code**, choisit ses photos, valide ;
@@ -155,6 +165,12 @@ Mathilde dépose ensuite les **photos finales HD**, que le client télécharge.
   reçoivent pas de mail du site (l'expéditeur de test de Resend ne peut écrire
   qu'à l'adresse du compte) : l'admin propose « Copier le message de
   livraison ».
+- **Aperçus de sélection** : enregistrement dissuadé tant que la galerie n'est
+  pas livrée (`src/components/gallery/protection.js`) : pas de menu d'appui
+  long ni de clic droit sur les images, pas de glisser, calque transparent
+  dans la visionneuse, mention sous la grille. Les captures d'écran restent
+  possibles (aucun navigateur ne les bloque) : la protection réelle est le
+  filigrane et la basse définition. Rien de tout cela après la livraison.
 - **SEO** : `/galerie/*` passe par le Worker, qui retire toutes les balises
   Open Graph/Twitter et ajoute `noindex, nofollow, noarchive` (balise + en-tête
   `X-Robots-Tag`) ; `Disallow: /galerie/` dans `robots.txt`.

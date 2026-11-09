@@ -7,6 +7,7 @@ import { FieldError } from '../components/ui/Notice'
 import { StatusIcon } from '../components/ui/StatusBadge'
 import { GalleryGrid } from '../components/gallery/GalleryGrid'
 import { GalleryLightbox } from '../components/gallery/GalleryLightbox'
+import { PROTECTED_CLASS, protectedMedia, protectionHandlers } from '../components/gallery/protection'
 import { SelectionBar } from '../components/gallery/SelectionBar'
 import { ValidateDialog } from '../components/gallery/ValidateDialog'
 import { downloadAsZip, downloadMethod, downloadOneByOne } from '../lib/gallery/downloadAll'
@@ -70,7 +71,8 @@ function AccessScreen({ slug, title, onSuccess }) {
           alt=""
           aria-hidden="true"
           onError={() => setCover(false)}
-          className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl"
+          draggable={false}
+          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover blur-2xl select-none"
         />
       )}
       <div className="absolute inset-0 bg-paper/55" aria-hidden="true" />
@@ -106,15 +108,19 @@ function AccessScreen({ slug, title, onSuccess }) {
   )
 }
 
-function Cover({ slug, content }) {
+function Cover({ slug, content, protect }) {
   return (
-    <header className="relative flex h-[62svh] min-h-[360px] items-end overflow-hidden bg-mist">
+    <header
+      className={`relative flex h-[62svh] min-h-[360px] items-end overflow-hidden bg-mist ${protect ? PROTECTED_CLASS : ''}`}
+      {...protectionHandlers(protect)}
+    >
       {content.cover_id && (
         <img
           src={`/api/galerie/${slug}/photos/${content.cover_id}/preview`}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
           fetchPriority="high"
+          {...protectedMedia(protect)}
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent" aria-hidden="true" />
@@ -166,6 +172,8 @@ export default function Galerie() {
 
   const delivered = data.status === 'delivered'
   const canSelect = !delivered && !data.selection_locked
+  // Aperçus filigranés (sélection ouverte ou validée) : enregistrement dissuadé.
+  const protect = !delivered
   const photos = data.photos
   const shown = filter === 'selected' && !delivered ? photos.filter((p) => selected.has(p.id)) : photos
   const indexOf = (id) => photos.findIndex((p) => p.id === id)
@@ -230,7 +238,7 @@ export default function Galerie() {
           Aperçu : vue client, la sélection n’est pas modifiable
         </p>
       )}
-      <Cover slug={slug} content={data} />
+      <Cover slug={slug} content={data} protect={protect} />
 
       <section className="mx-auto max-w-2xl px-6 py-10 text-center">
         {delivered ? (
@@ -283,7 +291,14 @@ export default function Galerie() {
             onToggle={delivered ? null : toggle}
             canSelect={canSelect}
             onDownload={delivered}
+            protect={protect}
           />
+        )}
+        {protect && (
+          <p className="mx-auto max-w-md px-6 pt-8 pb-4 text-center text-xs italic" data-testid="mention-protection">
+            Ces aperçus sont protégés. Vos photos en haute définition, sans filigrane, vous seront livrées après la
+            retouche.
+          </p>
         )}
       </main>
 
@@ -297,6 +312,7 @@ export default function Galerie() {
         onToggle={delivered ? null : toggle}
         canSelect={canSelect}
         onDownload={delivered}
+        protect={protect}
       />
 
       {/* Message discret : « Enregistré », limite atteinte, erreur. */}

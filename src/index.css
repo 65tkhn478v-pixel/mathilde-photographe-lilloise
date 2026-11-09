@@ -255,3 +255,17 @@
     animation-name: sheet-left;
   }
 }
+
+/* Galerie client en phase de sélection : retire « Enregistrer l'image » de
+   l'appui long (iOS), la sélection et le glisser natif des aperçus. Posée
+   seulement sur les conteneurs d'images, jamais après la livraison (voir
+   src/components/gallery/protection.js). */
+.galerie-protegee,
+.galerie-protegee img {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.galerie-protegee img {
+  -webkit-user-drag: none;
+}
