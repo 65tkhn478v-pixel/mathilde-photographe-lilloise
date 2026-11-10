@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { BOOKING_LINK, LOCATION, NAV_LINKS, SOCIALS } from '../data/site'
 import { InstagramIcon, PinterestIcon, TikTokIcon } from './SocialIcons'
+import { usePublicSettings } from '../lib/publicSettings'
 
 const SOCIAL_ICONS = {
   Instagram: InstagramIcon,
@@ -9,6 +10,7 @@ const SOCIAL_ICONS = {
 }
 
 export function Footer() {
+  const { review_url: reviewUrl } = usePublicSettings()
   return (
     // bg-paper plutôt que bg-mist : le footer porte des liens de
     // navigation réels (texte courant, pas juste décoratif) — voir note de
@@ -64,6 +66,17 @@ export function Footer() {
                 )
               })}
             </ul>
+            <p className="mt-5 text-sm">
+              <a
+                href={reviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink-soft underline underline-offset-4 hover:text-accent"
+                data-testid="footer-avis"
+              >
+                Laisser un avis<span className="sr-only"> sur Google (nouvel onglet)</span>
+              </a>
+            </p>
           </div>
         </div>
 

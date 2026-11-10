@@ -10,6 +10,7 @@ import { Loading, Notice } from '../../../components/ui/Notice'
 import { StatusBadge } from '../../../components/ui/StatusBadge'
 import { adminButton, apiErrorMessage, inputClasses, labelClasses } from '../adminUi'
 import { UploadPanel, WatermarkPreview } from './UploadPanel'
+import { useAdminSettings } from '../useAdminSettings'
 import {
   deliveryMessage,
   galleryLink,
@@ -17,6 +18,7 @@ import {
   lastDayLabel,
   lightroomList,
   nextStep,
+  reviewMessage,
   shareMessage,
   shootLabel,
   statusBadge,
@@ -55,6 +57,15 @@ function AdminGrid({ galleryId, photos, active, onPick, coverId }) {
             {p.id === coverId && (
               <span className="font-label absolute bottom-0 left-0 bg-paper/90 px-1 text-xs tracking-wider text-ink uppercase">Couverture</span>
             )}
+            {p.kind === 'final' && p.metadata_stripped === 0 && (
+              <span
+                className="font-label absolute top-0 right-0 bg-paper/90 px-1 text-xs tracking-wider text-ink uppercase"
+                title="Les métadonnées (dont la position GPS éventuelle) n’ont pas pu être retirées de ce format."
+                data-testid="finale-metadonnees"
+              >
+                Métadonnées<span className="sr-only"> conservées : position GPS éventuelle non retirée</span>
+              </span>
+            )}
           </button>
         </li>
       ))}
@@ -62,7 +73,7 @@ function AdminGrid({ galleryId, photos, active, onPick, coverId }) {
   )
 }
 
-function DeleteGalleryDialog({ gallery, onDeleted, onExpired }) {
+export function DeleteGalleryDialog({ gallery, onDeleted, onExpired, triggerLabel = 'Supprimer la galerie définitivement', triggerClassName }) {
   const [typed, setTyped] = useState('')
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -80,8 +91,8 @@ function DeleteGalleryDialog({ gallery, onDeleted, onExpired }) {
   return (
     <AlertDialog.Root onOpenChange={() => setTyped('')}>
       <AlertDialog.Trigger asChild>
-        <button type="button" className={adminButton('decline')}>
-          Supprimer la galerie définitivement
+        <button type="button" className={adminButton('decline', triggerClassName)}>
+          {triggerLabel}
         </button>
       </AlertDialog.Trigger>
       <AlertDialog.Portal>
@@ -129,6 +140,7 @@ export function GalleryDetail({ id, initialCode, onBack, onExpired, onFeedback }
   const [activeProof, setActiveProof] = useState(null)
   const [actionError, setActionError] = useState(null)
   const [dates, setDates] = useState(null)
+  const settings = useAdminSettings()
   // Pendant un dépôt, la grille se met à jour toutes les 2 s au plus.
   const reloadTimer = useRef(null)
   const softReload = () => {
@@ -240,7 +252,9 @@ export function GalleryDetail({ id, initialCode, onBack, onExpired, onFeedback }
       {/* 3. Aperçus */}
       <Section id="g-apercus" title={`Aperçus (sélection) — ${g.counts.proofs}`}>
         {g.proofs_purged_at ? (
-          <p className="text-sm italic">Aperçus supprimés 7 jours après la livraison : seules les photos finales restent.</p>
+          <p className="text-sm italic">
+            Aperçus de sélection supprimés le {formatDateTime(g.proofs_purged_at)} : seules les photos finales restent.
+          </p>
         ) : (
           <>
             {proofs.length === 0 && <WatermarkPreview />}
@@ -313,9 +327,18 @@ export function GalleryDetail({ id, initialCode, onBack, onExpired, onFeedback }
         )}
         {selected.length > 0 && (
           <>
-            <div className="mt-4">
-              <AdminGrid galleryId={g.id} photos={selected} />
-            </div>
+            {g.proofs_purged_at ? (
+              // Aperçus supprimés (Paramètres → Stockage) : les noms restent.
+              <ul className="mt-4 columns-2 gap-6 text-sm sm:columns-4" data-testid="selection-noms">
+                {selected.map((p) => (
+                  <li key={p.id}>{p.original_filename}</li>
+                ))}
+              </ul>
+            ) : (
+              <div className="mt-4">
+                <AdminGrid galleryId={g.id} photos={selected} />
+              </div>
+            )}
             <button
               type="button"
               className={adminButton('outline', 'mt-4')}
@@ -368,7 +391,7 @@ export function GalleryDetail({ id, initialCode, onBack, onExpired, onFeedback }
         {['selection_open', 'selection_validated'].includes(g.status) && (
           <ConfirmDialog
             title="Livrer au client ?"
-            description="Le client verra ses photos finales et pourra les télécharger pendant 90 jours (modifiable dans Conservation)."
+                        description={`Le client verra ses photos finales et pourra les télécharger pendant ${settings.delivery_days} jours (modifiable dans Conservation).`}
             confirmLabel="Livrer"
             onConfirm={() => run(`/api/admin/galleries/${g.id}/deliver`, 'POST', undefined, 'Galerie livrée')}
             trigger={
@@ -387,6 +410,14 @@ export function GalleryDetail({ id, initialCode, onBack, onExpired, onFeedback }
               Copier le message de livraison
             </button>
             <p className="mt-1 text-xs italic">À envoyer vous-même au client ({g.client_email}) : le site n’écrit pas aux clients.</p>
+            <button
+              type="button"
+              className={adminButton('outline', 'mt-4')}
+              onClick={() => copy(reviewMessage(g, settings.review_url), 'Message de demande d’avis copié')}
+            >
+              Copier le message de demande d’avis
+            </button>
+            <p className="mt-1 text-xs italic">Une fois les photos téléchargées : le message est modifiable avant envoi.</p>
           </div>
         )}
       </Section>
@@ -418,7 +449,10 @@ export function GalleryDetail({ id, initialCode, onBack, onExpired, onFeedback }
             <button type="submit" disabled={!dates} className={adminButton('outline')}>
               Enregistrer les dates
             </button>
-            <p className="mt-1 text-xs italic">Durées par défaut à valider : sélection 30 jours, téléchargement 90 jours, suppression ensuite.</p>
+            <p className="mt-1 text-xs italic">
+              Durées par défaut (Paramètres) : sélection {settings.selection_days} jours, téléchargement {settings.delivery_days} jours,
+              suppression ensuite.
+            </p>
           </div>
         </form>
         <div className="mt-6">

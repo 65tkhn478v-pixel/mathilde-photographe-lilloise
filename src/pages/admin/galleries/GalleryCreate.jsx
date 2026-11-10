@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import clsx from 'clsx'
 import { api } from '../../../lib/api'
 import { useApiData } from '../../../lib/useApiData'
-import { GALLERY_RETENTION, GALLERY_SESSION_TYPES, INCLUDED_CHOICES, INCLUDED_MAX, INCLUDED_MIN } from '../../../../shared/galleries.js'
+import { GALLERY_SESSION_TYPES, INCLUDED_CHOICES, INCLUDED_MAX, INCLUDED_MIN } from '../../../../shared/galleries.js'
+import { DEFAULT_SETTINGS } from '../../../../shared/settings.js'
 import { addDays, dateKey, formatDayFull } from '../../../../shared/time.js'
 import { sessionLabel } from '../../../../shared/booking.js'
 import { FieldError, Notice } from '../../../components/ui/Notice'
@@ -16,8 +17,8 @@ export function GalleryCreate({ onCreated, onCancel, onExpired }) {
     client_email: '',
     session_type: 'grossesse',
     shoot_date: today(),
-    included_count: 30,
-    selection_deadline: addDays(today(), GALLERY_RETENTION.selectionDays),
+    included_count: DEFAULT_SETTINGS.included_default,
+    selection_deadline: addDays(today(), DEFAULT_SETTINGS.selection_days),
     booking_id: null,
   })
   const [errors, setErrors] = useState({})
@@ -27,7 +28,24 @@ export function GalleryCreate({ onCreated, onCancel, onExpired }) {
   const bookings = useApiData(pickBooking ? '/api/admin/galleries/bookings' : null, {
     onError: (err) => apiErrorMessage(err, onExpired),
   })
-  const set = (field) => (e) => setValues((v) => ({ ...v, [field]: e.target.value }))
+  // Réglages par défaut (page Paramètres) : préremplissent les champs que
+  // Mathilde n'a pas encore modifiés.
+  const edited = useRef(new Set())
+  const [selectionDays, setSelectionDays] = useState(DEFAULT_SETTINGS.selection_days)
+  useApiData('/api/admin/settings', {
+    onData: ({ settings }) => {
+      setSelectionDays(settings.selection_days)
+      setValues((v) => ({
+        ...v,
+        ...(edited.current.has('included_count') ? {} : { included_count: settings.included_default }),
+        ...(edited.current.has('selection_deadline') ? {} : { selection_deadline: addDays(today(), settings.selection_days) }),
+      }))
+    },
+  })
+  const set = (field) => (e) => {
+    edited.current.add(field)
+    setValues((v) => ({ ...v, [field]: e.target.value }))
+  }
 
   const fromBooking = (b) => {
     setValues((v) => ({
@@ -136,7 +154,10 @@ export function GalleryCreate({ onCreated, onCancel, onExpired }) {
               key={n}
               type="button"
               aria-pressed={Number(values.included_count) === n}
-              onClick={() => setValues((v) => ({ ...v, included_count: n }))}
+              onClick={() => {
+              edited.current.add('included_count')
+              setValues((v) => ({ ...v, included_count: n }))
+            }}
               className={clsx(
                 'font-label min-h-11 min-w-14 rounded-sm border px-3 text-sm',
                 Number(values.included_count) === n ? 'border-ink bg-ink text-paper' : 'border-structure text-ink hover:border-ink'
@@ -166,7 +187,7 @@ export function GalleryCreate({ onCreated, onCancel, onExpired }) {
         'selection_deadline',
         'Date limite de sélection',
         <input {...aria('selection_deadline')} type="date" min={today()} value={values.selection_deadline} onChange={set('selection_deadline')} className={inputClasses} />,
-        `Par défaut : aujourd’hui + ${GALLERY_RETENTION.selectionDays} jours (durée à valider).`
+        `Par défaut : aujourd’hui + ${selectionDays} jours (modifiable dans Paramètres).`
       )}
 
       <div aria-live="polite">{error && <Notice tone="error">{error}</Notice>}</div>

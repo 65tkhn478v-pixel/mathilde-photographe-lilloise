@@ -1,7 +1,8 @@
 // Traitement des photos au dépôt : un Web Worker par traitement simultané
 // (OffscreenCanvas), ou repli sur le thread principal.
 import { WATERMARK_TEXT } from '../../../shared/galleries.js'
-import { renderVersions } from './render.js'
+import { DecodeError, UNREADABLE, renderDecoded, renderPlaceholder, renderVersions } from './render.js'
+import { FORMAT_LABELS } from './formats.js'
 
 /**
  * Motif de filigrane (pour un grand côté de 1600 px) : texte fin en Playfair
@@ -47,17 +48,72 @@ export async function makeWatermarkTile(text = WATERMARK_TEXT) {
 const supportsWorker = () =>
   typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined' && typeof createImageBitmap !== 'undefined'
 
-export async function createProcessor({ concurrency = 3 } = {}) {
-  const tile = await makeWatermarkTile()
+const mainCanvas = (w, h) => Object.assign(document.createElement('canvas'), { width: w, height: h })
+
+/**
+ * Décodage par un élément <img> sur le thread principal : Safari y lit le
+ * HEIC et le TIFF même quand createImageBitmap ne sait pas le faire.
+ */
+async function decodeWithImage(file) {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = new Image()
+    img.src = url
+    await img.decode()
+    if (!img.naturalWidth) throw new DecodeError()
+    const bitmap = await createImageBitmap(img)
+    return { image: bitmap, width: bitmap.width, height: bitmap.height, release: () => bitmap.close?.() }
+  } catch {
+    throw new DecodeError()
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+const toError = (message, code) => Object.assign(new Error(message), { code })
+
+/**
+ * Traitement avec replis :
+ * - HEIC / TIFF non décodés : nouvel essai par <img> (Safari), sinon message
+ *   « Format non lisible par ce navigateur… » ;
+ * - photo finale non affichable (RAW sans aperçu, HEIC hors Safari…) :
+ *   vignette neutre, le fichier d'origine est livré tel quel.
+ */
+function withFallbacks(run, tile) {
+  return async (file, kind, format) => {
+    try {
+      return await run(file, kind, format)
+    } catch (err) {
+      if (err.code === 'undecodable' && (format === 'heic' || format === 'tiff')) {
+        try {
+          const decoded = await decodeWithImage(file)
+          try {
+            return await renderDecoded(decoded, { kind, watermark: tile, makeCanvas: mainCanvas })
+          } finally {
+            decoded.release()
+          }
+        } catch {
+          // Toujours illisible : voir ci-dessous.
+        }
+      }
+      if (kind === 'final' && (err.code === 'undecodable' || err.code === 'raw-preview')) {
+        return { ...(await renderPlaceholder(file.name, FORMAT_LABELS[format], mainCanvas)), placeholder: true }
+      }
+      if (err.code === 'undecodable' && (format === 'heic' || format === 'tiff')) throw toError(UNREADABLE, err.code)
+      throw err
+    }
+  }
+}
+
+export async function createProcessor({ concurrency = 3, watermarkText = WATERMARK_TEXT } = {}) {
+  const tile = await makeWatermarkTile(watermarkText)
   if (!supportsWorker()) {
     return {
       mode: 'thread principal',
-      process: (file, kind) =>
-        renderVersions(file, {
-          kind,
-          watermark: tile,
-          makeCanvas: (w, h) => Object.assign(document.createElement('canvas'), { width: w, height: h }),
-        }),
+      process: withFallbacks(
+        (file, kind, format) => renderVersions(file, { kind, format, watermark: tile, makeCanvas: mainCanvas }),
+        tile
+      ),
       dispose() {},
     }
   }
@@ -73,21 +129,24 @@ export async function createProcessor({ concurrency = 3 } = {}) {
       entry.pending.delete(data.id)
       entry.busy = false
       if (data.ok) job.resolve(data.result)
-      else job.reject(new Error(data.error))
+      else job.reject(toError(data.error, data.code))
     }
   }
   let seq = 0
   return {
     mode: 'Web Worker',
-    process(file, kind) {
-      const entry = workers.find((w) => !w.busy) ?? workers[seq % workers.length]
-      entry.busy = true
-      const id = ++seq
-      return new Promise((resolve, reject) => {
-        entry.pending.set(id, { resolve, reject })
-        entry.worker.postMessage({ id, file, kind })
-      })
-    },
+    process: withFallbacks(
+      (file, kind, format) => {
+        const entry = workers.find((w) => !w.busy) ?? workers[seq % workers.length]
+        entry.busy = true
+        const id = ++seq
+        return new Promise((resolve, reject) => {
+          entry.pending.set(id, { resolve, reject })
+          entry.worker.postMessage({ id, file, kind, format })
+        })
+      },
+      tile
+    ),
     dispose() {
       workers.forEach((w) => w.worker.terminate())
     },

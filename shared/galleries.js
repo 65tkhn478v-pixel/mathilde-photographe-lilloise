@@ -42,4 +42,16 @@ export const PHOTO_VERSIONS = {
 // par la taille de requête des plans Free et Pro de Cloudflare (100 Mo).
 export const VERSION_MAX_BYTES = { thumb: 1_000_000, preview: 4_000_000, blur: 60_000, hd: 95_000_000 }
 
+// Photos finales au-delà de 50 Mo : envoi en morceaux de 25 Mo (multipart R2 :
+// morceaux identiques sauf le dernier, sous la limite de requête), 4 Go au plus.
+export const MULTIPART_PART_BYTES = 25 * 1024 * 1024
+export const FINAL_MAX_BYTES = 4 * 1024 ** 3
+
+// Types acceptés pour le fichier livré (RAW : flux binaire, téléchargé tel quel).
+export const FINAL_CONTENT_TYPES = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif', 'image/tiff', 'image/gif', 'image/bmp',
+  'application/octet-stream',
+]
+export const PHOTO_FORMATS = ['jpeg', 'png', 'webp', 'avif', 'heic', 'tiff', 'cr3', 'cr2', 'raw', 'gif', 'bmp']
+
 export const GALLERY_STATUSES = ['draft', 'selection_open', 'selection_validated', 'delivered', 'expired']

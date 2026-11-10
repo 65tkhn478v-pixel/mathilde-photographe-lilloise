@@ -11,6 +11,8 @@ import { PROTECTED_CLASS, protectedMedia, protectionHandlers } from '../componen
 import { SelectionBar } from '../components/gallery/SelectionBar'
 import { ValidateDialog } from '../components/gallery/ValidateDialog'
 import { downloadAsZip, downloadMethod, downloadOneByOne } from '../lib/gallery/downloadAll'
+import { ReviewInvite, ReviewNudge } from '../components/gallery/ReviewInvite'
+import { usePublicSettings } from '../lib/publicSettings'
 
 const UNAVAILABLE = 'Cette galerie n’est plus disponible. Écrivez-moi si besoin.'
 const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1)
@@ -149,6 +151,20 @@ export default function Galerie() {
   const [validateError, setValidateError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [download, setDownload] = useState(null)
+  // Rappel discret d'avis après un premier téléchargement (une fois par visite).
+  const [reviewNudge, setReviewNudge] = useState(false)
+  const { review_url: reviewUrl } = usePublicSettings()
+  const offerReview = useCallback(() => {
+    if (reviewNudge) return
+    try {
+      const storageKey = `galerie-avis:${slug}`
+      if (sessionStorage.getItem(storageKey)) return
+      sessionStorage.setItem(storageKey, '1')
+    } catch {
+      // Stockage indisponible : le rappel s'affiche simplement pour cette page.
+    }
+    setReviewNudge(true)
+  }, [reviewNudge, slug])
 
   const selected = useMemo(() => selection ?? new Set(data?.selected ?? []), [selection, data])
   const srcOf = useCallback((photo, version) => `/api/galerie/${slug}/photos/${photo.id}/${version}`, [slug])
@@ -224,6 +240,7 @@ export default function Galerie() {
       if (method === 'zip') await downloadAsZip(photos, srcOf, `${data.title.replace(/[^\p{L}\d]+/gu, '-')}.zip`, progress)
       else await downloadOneByOne(photos, srcOf, progress)
       setDownload({ done: photos.length, total: photos.length, finished: true })
+      offerReview()
     } catch (err) {
       // Annulation de la fenêtre d'enregistrement : rien à signaler.
       setDownload(err?.name === 'AbortError' ? null : { error: 'Le téléchargement s’est interrompu. Réessayez, ou téléchargez les photos une par une.' })
@@ -232,7 +249,11 @@ export default function Galerie() {
 
   const viewerPhotos = shown
   return (
-    <div className={`min-h-svh bg-paper ${delivered || canSelect || !data.preview ? 'pb-28' : ''}`}>
+    <div
+      className={`min-h-svh bg-paper ${delivered && reviewNudge ? 'pb-44' : delivered || canSelect || !data.preview ? 'pb-28' : ''}`}
+      // Premier téléchargement d'une photo (grille ou visionneuse) : rappel d'avis.
+      onClickCapture={delivered ? (e) => e.target instanceof Element && e.target.closest('a[download]') && offerReview() : undefined}
+    >
       {data.preview && (
         <p className="font-label sticky top-0 z-30 bg-ink px-4 py-2 text-center text-xs tracking-[0.15em] text-paper uppercase">
           Aperçu : vue client, la sélection n’est pas modifiable
@@ -302,6 +323,8 @@ export default function Galerie() {
         )}
       </main>
 
+      {delivered && <ReviewInvite reviewUrl={reviewUrl} />}
+
       <GalleryLightbox
         photos={viewerPhotos}
         index={viewer}
@@ -359,6 +382,7 @@ export default function Galerie() {
                 </span>
               </button>
             )}
+            {reviewNudge && <ReviewNudge reviewUrl={reviewUrl} />}
           </div>
         </div>
       )}

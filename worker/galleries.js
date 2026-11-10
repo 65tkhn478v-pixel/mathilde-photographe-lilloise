@@ -15,8 +15,12 @@ import {
   GALLERY_CODE_LENGTH,
   GALLERY_RETENTION,
   GALLERY_SESSION_TYPES,
+  FINAL_CONTENT_TYPES,
+  FINAL_MAX_BYTES,
   INCLUDED_MAX,
   INCLUDED_MIN,
+  MULTIPART_PART_BYTES,
+  PHOTO_FORMATS,
   PHOTO_VERSIONS,
   VERSION_MAX_BYTES,
   galleryTypeLabel,
@@ -29,6 +33,7 @@ import { hmacSign, hmacVerify, randomString } from './crypto.js'
 import { clientIp, error, json, readJson } from './http.js'
 import { hit, ipSubject, isBlocked, reset, sweep } from './rateLimit.js'
 import { notifySelectionValidated } from './notify.js'
+import { getSettings } from './settings.js'
 
 const SLUG_ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789'
 const SESSION_DAYS = 30
@@ -177,20 +182,25 @@ function clientTitle(g) {
 
 const objectKey = (g, kind, photoId, version) => `galleries/${g.storage_key}/${kind}/${photoId}/${version}`
 
-async function deletePrefix(env, prefix) {
-  let deleted = 0
+/** Supprime tous les objets d'un préfixe : { objects, bytes } effacés. */
+async function deletePrefixStats(env, prefix) {
+  let objects = 0
+  let bytes = 0
   let cursor
   do {
     const list = await env.GALLERY_BUCKET.list({ prefix, cursor, limit: 1000 })
     const keys = list.objects.map((o) => o.key)
     if (keys.length) {
       await env.GALLERY_BUCKET.delete(keys)
-      deleted += keys.length
+      objects += keys.length
+      bytes += list.objects.reduce((n, o) => n + o.size, 0)
     }
     cursor = list.truncated ? list.cursor : undefined
   } while (cursor)
-  return deleted
+  return { objects, bytes }
 }
+
+const deletePrefix = async (env, prefix) => (await deletePrefixStats(env, prefix)).objects
 
 function contentDisposition(filename) {
   const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_')
@@ -261,7 +271,10 @@ export async function createGallery(request, env) {
   const body = (await readJson(request)) ?? {}
   const now = new Date()
   const nowIso = now.toISOString()
-  if (!body.selection_deadline) body.selection_deadline = addDays(dateKey(now), GALLERY_RETENTION.selectionDays)
+  // Réglages par défaut (page Paramètres) : appliqués aux nouvelles galeries seulement.
+  const defaults = await getSettings(env.DB)
+  if (!body.selection_deadline) body.selection_deadline = addDays(dateKey(now), defaults.selection_days)
+  if (body.included_count === undefined) body.included_count = defaults.included_default
   const { data, errors } = validateGalleryInput(body)
   if (!errors.selection_deadline && data.selection_deadline <= nowIso) errors.selection_deadline = 'La date limite doit être dans le futur.'
   if (Object.keys(errors).length) return error(422, 'Certaines informations sont à corriger.', { errors })
@@ -309,7 +322,7 @@ export async function galleryDetail(request, env, { id }) {
   const nowIso = new Date().toISOString()
   const { results: photos } = await env.DB
     .prepare(
-      `SELECT p.id, p.kind, p.original_filename, p.size_bytes, p.width, p.height, p.complete,
+      `SELECT p.id, p.kind, p.original_filename, p.size_bytes, p.width, p.height, p.complete, p.format, p.mime_type, p.metadata_stripped,
               EXISTS (SELECT 1 FROM gallery_selections s WHERE s.photo_id = p.id) AS selected
        FROM gallery_photos p WHERE p.gallery_id = ? ORDER BY p.kind, p.sort_key`
     )
@@ -407,16 +420,24 @@ export const reopenSelection = (request, env, { id }) =>
     return { set: { status: 'selection_open', selection_validated_at: null } }
   })
 
-export const deliverGallery = (request, env, { id }) =>
-  transition(env, id, (g, nowIso) => {
+export async function deliverGallery(request, env, { id }) {
+  // Durée de téléchargement : réglage en vigueur au moment de la livraison.
+  const { delivery_days: deliveryDays } = await getSettings(env.DB)
+  return transition(env, id, (g, nowIso) => {
     if (!['selection_open', 'selection_validated'].includes(g.status)) return { error: 'Cette galerie ne peut pas être livrée.' }
     if (!g.finals_count) return { error: 'Déposez au moins une photo finale avant de livrer.' }
-    const expires = plusDays(nowIso, GALLERY_RETENTION.deliveryDays)
+    const expires = plusDays(nowIso, deliveryDays)
     return { set: { status: 'delivered', delivered_at: nowIso, delivery_expires_at: expires, purge_at: expires } }
   })
+}
 
 /** Supprime une galerie entièrement et immédiatement (D1 + R2). */
 async function destroyGallery(env, g) {
+  const { results: uploads } = await env.DB
+    .prepare('SELECT u.* FROM gallery_uploads u JOIN gallery_photos p ON p.id = u.photo_id WHERE p.gallery_id = ?')
+    .bind(g.id)
+    .all()
+  await abortUploads(env, uploads)
   const objects = await deletePrefix(env, `galleries/${g.storage_key}/`)
   await env.DB.batch([
     env.DB.prepare('DELETE FROM gallery_selections WHERE gallery_id = ?').bind(g.id),
@@ -465,6 +486,11 @@ export async function registerPhoto(request, env, { id }) {
   if (!PHOTO_VERSIONS[kind] || !name || name.length > 200 || !(size > 0) || !(width > 0) || !(height > 0)) {
     return error(422, 'Photo invalide.')
   }
+  // Format détecté dans le navigateur (signature du fichier) et, pour une
+  // finale, type du fichier livré et retrait des métadonnées.
+  const format = PHOTO_FORMATS.includes(body.format) ? body.format : null
+  const mimeType = kind === 'final' && FINAL_CONTENT_TYPES.includes(body.mime_type) ? body.mime_type : null
+  const stripped = kind === 'final' && typeof body.metadata_stripped === 'boolean' ? Number(body.metadata_stripped) : null
   if (effectiveStatus(g, new Date().toISOString()) === 'expired') return error(409, 'Cette galerie a expiré.')
   if (kind === 'proof' && !['draft', 'selection_open'].includes(g.status)) {
     return error(409, 'La sélection est terminée : les aperçus ne peuvent plus être modifiés.')
@@ -472,11 +498,15 @@ export async function registerPhoto(request, env, { id }) {
   const nowIso = new Date().toISOString()
   await env.DB
     .prepare(
-      `INSERT INTO gallery_photos (gallery_id, kind, original_filename, size_bytes, width, height, sort_key, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (gallery_id, kind, original_filename, size_bytes) DO NOTHING`
+      `INSERT INTO gallery_photos (gallery_id, kind, original_filename, size_bytes, width, height, sort_key, created_at,
+         format, mime_type, metadata_stripped)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (gallery_id, kind, original_filename, size_bytes) DO UPDATE SET
+         format = COALESCE(excluded.format, gallery_photos.format),
+         mime_type = COALESCE(excluded.mime_type, gallery_photos.mime_type),
+         metadata_stripped = COALESCE(excluded.metadata_stripped, gallery_photos.metadata_stripped)`
     )
-    .bind(id, kind, name, size, Math.round(width), Math.round(height), sortKey(name), nowIso)
+    .bind(id, kind, name, size, Math.round(width), Math.round(height), sortKey(name), nowIso, format, mimeType, stripped)
     .run()
   const photo = await env.DB
     .prepare(
@@ -485,7 +515,15 @@ export async function registerPhoto(request, env, { id }) {
     )
     .bind(id, kind, name, size)
     .first()
-  return json({ photo: { ...photo, complete: Boolean(photo.complete) } })
+  // Envoi en morceaux déjà commencé : la reprise part des morceaux manquants.
+  const upload = await env.DB.prepare('SELECT * FROM gallery_uploads WHERE photo_id = ?').bind(photo.id).first()
+  return json({
+    photo: {
+      ...photo,
+      complete: Boolean(photo.complete),
+      hd_upload: upload ? multipartState(upload) : null,
+    },
+  })
 }
 
 export async function uploadVersion(request, env, { id, pid, version }) {
@@ -499,31 +537,160 @@ export async function uploadVersion(request, env, { id, pid, version }) {
   if (length > max) {
     return error(413, `Fichier trop lourd : ${Math.round(max / 1_000_000)} Mo maximum par photo.`)
   }
-  const type = (request.headers.get('Content-Type') ?? '').split(';')[0]
-  const allowed = version === 'hd' ? ['image/jpeg'] : ['image/webp', 'image/jpeg']
-  if (!allowed.includes(type)) return error(415, version === 'hd' ? 'Format JPEG attendu.' : 'Format WebP ou JPEG attendu.')
+  const type = (request.headers.get('Content-Type') ?? '').split(';')[0].toLowerCase()
+  const allowed = version === 'hd' ? FINAL_CONTENT_TYPES : ['image/webp', 'image/jpeg']
+  if (!allowed.includes(type)) return error(415, version === 'hd' ? 'Ce fichier n’est pas une photo reconnue.' : 'Format WebP ou JPEG attendu.')
 
   // Écriture en streaming vers R2 (le fichier n'est jamais chargé en mémoire).
   await env.GALLERY_BUCKET.put(objectKey(g, photo.kind, photo.id, version), request.body, {
     httpMetadata: { contentType: type },
   })
+  return json({ complete: await markVersion(env, photo.id, version, length, version === 'hd' ? type : null) })
+}
+
+/** Version présente dans R2 : drapeau, taille réelle stockée, photo complète ou non. */
+async function markVersion(env, photoId, version, bytes, mimeType = null) {
   await env.DB.batch([
-    env.DB.prepare(`UPDATE gallery_photos SET has_${version} = 1 WHERE id = ?`).bind(photo.id),
+    env.DB
+      .prepare(`UPDATE gallery_photos SET has_${version} = 1, ${version}_bytes = ?, mime_type = COALESCE(?, mime_type) WHERE id = ?`)
+      .bind(bytes, mimeType, photoId),
     env.DB
       .prepare(
         `UPDATE gallery_photos SET complete = (has_thumb = 1 AND has_preview = 1 AND has_blur = 1 AND (kind = 'proof' OR has_hd = 1))
          WHERE id = ?`
       )
-      .bind(photo.id),
+      .bind(photoId),
   ])
-  const updated = await env.DB.prepare('SELECT complete FROM gallery_photos WHERE id = ?').bind(photo.id).first()
-  return json({ complete: Boolean(updated.complete) })
+  const updated = await env.DB.prepare('SELECT complete FROM gallery_photos WHERE id = ?').bind(photoId).first()
+  return Boolean(updated.complete)
+}
+
+// ---- Admin : photo finale en plusieurs morceaux (multipart R2) ---------------
+
+const multipartState = (u) => ({
+  part_size: u.part_size,
+  total_bytes: u.total_bytes,
+  content_type: u.content_type,
+  parts: JSON.parse(u.parts).map((p) => p.partNumber),
+})
+const partCount = (u) => Math.ceil(u.total_bytes / u.part_size)
+
+/** Abandonne proprement des envois en cours (aucun objet n'est créé dans R2). */
+async function abortUploads(env, uploads) {
+  for (const u of uploads) {
+    try {
+      await env.GALLERY_BUCKET.resumeMultipartUpload(u.object_key, u.upload_id).abort()
+    } catch {
+      // Déjà terminé ou expiré : rien à abandonner.
+    }
+    await env.DB.prepare('DELETE FROM gallery_uploads WHERE photo_id = ?').bind(u.photo_id).run()
+  }
+  return uploads.length
+}
+
+async function finalPhoto(env, id, pid) {
+  const g = await galleryById(env.DB, id)
+  const photo = g && (await env.DB.prepare("SELECT id, kind FROM gallery_photos WHERE id = ? AND gallery_id = ? AND kind = 'final'").bind(pid, id).first())
+  return photo ? { g, photo } : null
+}
+
+/** Ouvre (ou retrouve, pour une reprise) l'envoi en morceaux du fichier HD. */
+export async function startMultipart(request, env, { id, pid }) {
+  const found = await finalPhoto(env, id, pid)
+  if (!found) return error(404, NOT_FOUND)
+  const body = (await readJson(request)) ?? {}
+  const size = Number(body.size)
+  const type = str(body.content_type).toLowerCase()
+  if (!Number.isInteger(size) || size <= 0) return error(422, 'Taille du fichier inconnue.')
+  if (size > FINAL_MAX_BYTES) return error(413, 'Fichier trop lourd : 4 Go maximum par photo.')
+  if (!FINAL_CONTENT_TYPES.includes(type)) return error(415, 'Ce fichier n’est pas une photo reconnue.')
+  const existing = await env.DB.prepare('SELECT * FROM gallery_uploads WHERE photo_id = ?').bind(pid).first()
+  if (existing && existing.total_bytes === size && existing.content_type === type) return json(multipartState(existing))
+  if (existing) await abortUploads(env, [existing])
+  const key = objectKey(found.g, 'final', pid, 'hd')
+  const upload = await env.GALLERY_BUCKET.createMultipartUpload(key, { httpMetadata: { contentType: type } })
+  const row = {
+    photo_id: pid,
+    object_key: key,
+    upload_id: upload.uploadId,
+    part_size: MULTIPART_PART_BYTES,
+    total_bytes: size,
+    content_type: type,
+    parts: '[]',
+  }
+  await env.DB
+    .prepare(
+      `INSERT INTO gallery_uploads (photo_id, object_key, upload_id, part_size, total_bytes, content_type, parts, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, '[]', ?)`
+    )
+    .bind(pid, key, row.upload_id, row.part_size, size, type, new Date().toISOString())
+    .run()
+  return json(multipartState(row), 201)
+}
+
+const NO_UPLOAD = () => error(404, 'Envoi introuvable : il va reprendre depuis le début.', { code: 'no-upload' })
+
+export async function uploadPart(request, env, { id, pid, part }) {
+  const found = await finalPhoto(env, id, pid)
+  if (!found) return error(404, NOT_FOUND)
+  const u = await env.DB.prepare('SELECT * FROM gallery_uploads WHERE photo_id = ?').bind(pid).first()
+  if (!u) return NO_UPLOAD()
+  const number = Number(part)
+  const count = partCount(u)
+  if (!Number.isInteger(number) || number < 1 || number > count) return error(422, 'Morceau invalide.')
+  const expected = number < count ? u.part_size : u.total_bytes - (count - 1) * u.part_size
+  const length = Number(request.headers.get('Content-Length'))
+  if (length !== expected) return error(422, 'Taille du morceau inattendue.')
+  let uploaded
+  try {
+    uploaded = await env.GALLERY_BUCKET.resumeMultipartUpload(u.object_key, u.upload_id).uploadPart(number, request.body)
+  } catch {
+    // Envoi expiré ou abandonné côté R2 : le navigateur recommence.
+    await env.DB.prepare('DELETE FROM gallery_uploads WHERE photo_id = ?').bind(pid).run()
+    return NO_UPLOAD()
+  }
+  // Les morceaux d'un fichier sont envoyés l'un après l'autre : mise à jour simple.
+  const fresh = await env.DB.prepare('SELECT parts FROM gallery_uploads WHERE photo_id = ?').bind(pid).first()
+  if (!fresh) return NO_UPLOAD()
+  const parts = JSON.parse(fresh.parts).filter((p) => p.partNumber !== number)
+  parts.push({ partNumber: number, etag: uploaded.etag })
+  await env.DB.prepare('UPDATE gallery_uploads SET parts = ? WHERE photo_id = ?').bind(JSON.stringify(parts), pid).run()
+  return json({ part: number, parts: parts.length, of: count })
+}
+
+export async function completeMultipart(request, env, { id, pid }) {
+  const found = await finalPhoto(env, id, pid)
+  if (!found) return error(404, NOT_FOUND)
+  const u = await env.DB.prepare('SELECT * FROM gallery_uploads WHERE photo_id = ?').bind(pid).first()
+  if (!u) return NO_UPLOAD()
+  const parts = JSON.parse(u.parts).sort((a, b) => a.partNumber - b.partNumber)
+  if (parts.length !== partCount(u) || parts.some((p, i) => p.partNumber !== i + 1)) {
+    return error(409, 'Envoi incomplet : certains morceaux manquent.', { parts: parts.map((p) => p.partNumber) })
+  }
+  let object
+  try {
+    object = await env.GALLERY_BUCKET.resumeMultipartUpload(u.object_key, u.upload_id).complete(parts)
+  } catch {
+    await abortUploads(env, [u])
+    return NO_UPLOAD()
+  }
+  await env.DB.prepare('DELETE FROM gallery_uploads WHERE photo_id = ?').bind(pid).run()
+  return json({ complete: await markVersion(env, pid, 'hd', object.size, u.content_type) })
+}
+
+export async function abortMultipart(request, env, { id, pid }) {
+  const found = await finalPhoto(env, id, pid)
+  if (!found) return error(404, NOT_FOUND)
+  const u = await env.DB.prepare('SELECT * FROM gallery_uploads WHERE photo_id = ?').bind(pid).first()
+  return json({ aborted: u ? await abortUploads(env, [u]) : 0 })
 }
 
 export async function deletePhoto(request, env, { id, pid }) {
   const g = await galleryById(env.DB, id)
   const photo = g && (await env.DB.prepare('SELECT id, kind FROM gallery_photos WHERE id = ? AND gallery_id = ?').bind(pid, id).first())
   if (!photo) return error(404, NOT_FOUND)
+  const { results: uploads } = await env.DB.prepare('SELECT * FROM gallery_uploads WHERE photo_id = ?').bind(photo.id).all()
+  await abortUploads(env, uploads)
   await deletePrefix(env, `galleries/${g.storage_key}/${photo.kind}/${photo.id}/`)
   await env.DB.batch([
     env.DB.prepare('DELETE FROM gallery_selections WHERE photo_id = ?').bind(photo.id),
@@ -768,7 +935,8 @@ export async function runGalleryCleanup(env, now = new Date()) {
   let objects = 0
   for (const g of toPurge) objects += await destroyGallery(env, g)
 
-  const proofsBefore = plusDays(nowIso, -GALLERY_RETENTION.proofsAfterDeliveryDays)
+  const { proofs_after_delivery_days: proofsDays } = await getSettings(db)
+  const proofsBefore = plusDays(nowIso, -proofsDays)
   const { results: delivered } = await db
     .prepare(
       `SELECT id, storage_key FROM galleries
@@ -786,7 +954,11 @@ export async function runGalleryCleanup(env, now = new Date()) {
       db.prepare('UPDATE galleries SET proofs_purged_at = ?, cover_photo_id = NULL WHERE id = ?').bind(nowIso, g.id),
     ])
   }
+  // Envois en morceaux abandonnés depuis plus de 7 jours : fermés proprement.
+  const { results: stale } = await db.prepare('SELECT * FROM gallery_uploads WHERE created_at <= ?').bind(plusDays(nowIso, -7)).all()
+  const uploadsAborted = await abortUploads(env, stale)
   const summary = {
+    uploads_aborted: uploadsAborted,
     expired: expired.meta.changes,
     purged: toPurge.length,
     proofs_cleared: delivered.length,

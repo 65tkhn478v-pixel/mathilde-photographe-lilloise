@@ -7,18 +7,21 @@ import { hasValidSession, isSameOrigin } from './auth.js'
 import { GENERIC_ERROR, error } from './http.js'
 import { createBooking, getSlots } from './public.js'
 import * as galleries from './galleries.js'
+import * as settings from './settings.js'
 
 const ID = '(?<id>\\d+)'
 const DATE = '(?<date>\\d{4}-\\d{2}-\\d{2})'
 const SLUG = '(?<slug>[a-z0-9]{16,40})'
 const PID = '(?<pid>\\d+)'
 const VERSION = '(?<version>thumb|preview|blur|hd)'
+const PART = '(?<part>\\d+)'
 const GAL = `/api/admin/galleries/${ID}`
 
 // [méthode, chemin, handler, options]
 const ROUTES = [
   ['GET', '/api/slots', getSlots, { public: true }],
   ['POST', '/api/bookings', createBooking, { public: true }],
+  ['GET', '/api/settings', settings.publicSettings, { public: true }],
 
   ['POST', '/api/admin/login', admin.login, { public: true }],
   ['POST', '/api/admin/logout', admin.logout, { public: true }],
@@ -41,6 +44,11 @@ const ROUTES = [
   ['GET', '/api/admin/history', admin.history],
   ['POST', '/api/admin/purge', admin.purge],
 
+  // Paramètres (réglages par défaut)
+  ['GET', '/api/admin/settings', settings.readSettings],
+  ['PUT', '/api/admin/settings', settings.saveSettings],
+  ['DELETE', '/api/admin/settings', settings.resetSettings],
+
   // Galeries clients — admin
   ['GET', '/api/admin/galleries', galleries.listGalleries],
   ['POST', '/api/admin/galleries', galleries.createGallery],
@@ -57,6 +65,10 @@ const ROUTES = [
   ['PUT', `${GAL}/photos/${PID}/${VERSION}`, galleries.uploadVersion],
   ['GET', `${GAL}/photos/${PID}/${VERSION}`, galleries.adminPhoto],
   ['DELETE', `${GAL}/photos/${PID}`, galleries.deletePhoto],
+  ['POST', `${GAL}/photos/${PID}/hd/multipart`, galleries.startMultipart],
+  ['PUT', `${GAL}/photos/${PID}/hd/multipart/${PART}`, galleries.uploadPart],
+  ['POST', `${GAL}/photos/${PID}/hd/multipart/complete`, galleries.completeMultipart],
+  ['DELETE', `${GAL}/photos/${PID}/hd/multipart`, galleries.abortMultipart],
 
   // Galeries clients — client (accès par lien + code, contrôles dans le module)
   ['GET', `/api/galerie/${SLUG}`, galleries.galleryPublic, { public: true }],

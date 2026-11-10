@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { adminButton } from '../adminUi'
+import { api } from '../../../lib/api'
+import { Notice } from '../../../components/ui/Notice'
+import { FINAL_ACCEPT, FORMAT_LABELS, METADATA_WARNING, PROOF_ACCEPT } from '../../../lib/gallery/formats.js'
+import { WATERMARK_TEXT } from '../../../../shared/galleries.js'
 
 const STATUS = {
   waiting: 'En attente',
@@ -32,11 +36,16 @@ export function UploadPanel({ galleryId, kind, photos, onPhotoDone, disabled, di
     if (!files.length || disabled) return
     if (!queue.current) {
       // Chargé à la demande : le traitement d'image n'alourdit pas l'admin.
-      const [{ createProcessor }, { createUploadQueue }] = await Promise.all([
+      const [{ createProcessor }, { createUploadQueue }, watermarkText] = await Promise.all([
         import('../../../lib/gallery/processor.js'),
         import('../../../lib/gallery/uploadQueue.js'),
+        // Texte du filigrane en vigueur (Paramètres) : s'applique aux aperçus déposés à partir de maintenant.
+        api('/api/admin/settings').then(
+          (d) => d.settings.watermark_text,
+          () => WATERMARK_TEXT
+        ),
       ])
-      processor.current = await createProcessor()
+      processor.current = await createProcessor({ watermarkText })
       queue.current = createUploadQueue({
         galleryId,
         kind,
@@ -55,8 +64,8 @@ export function UploadPanel({ galleryId, kind, photos, onPhotoDone, disabled, di
     addFiles(e.dataTransfer.files)
   }
 
-  const label = kind === 'proof' ? 'aperçus' : 'photos finales'
-  const visible = state?.items.filter((i) => i.status !== 'done' && i.status !== 'skipped').slice(0, 8) ?? []
+  // Fichiers en cours, en échec ou livrés avec un avertissement (métadonnées).
+  const visible = state?.items.filter((i) => (i.status !== 'done' && i.status !== 'skipped') || i.warning).slice(0, 12) ?? []
 
   return (
     <div>
@@ -75,12 +84,16 @@ export function UploadPanel({ galleryId, kind, photos, onPhotoDone, disabled, di
         )}
       >
         <p className="text-sm">
-          {disabled ? disabledReason : `Glissez ici vos ${label} (JPEG), ou`}
+          {disabled
+            ? disabledReason
+            : kind === 'proof'
+              ? 'Glissez ici vos aperçus (JPEG, PNG, WebP, AVIF, HEIC, TIFF ou RAW Canon CR3 / CR2), ou'
+              : 'Glissez ici vos photos finales (tous formats, RAW compris), ou'}
         </p>
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,.jpg,.jpeg"
+          accept={kind === 'proof' ? PROOF_ACCEPT : FINAL_ACCEPT}
           multiple
           hidden
           onChange={(e) => {
@@ -93,8 +106,8 @@ export function UploadPanel({ galleryId, kind, photos, onPhotoDone, disabled, di
         </button>
         <p className="text-xs italic">
           {kind === 'proof'
-            ? 'Les aperçus sont préparés dans votre navigateur (filigrane, 1600 px) : vos originaux ne quittent pas votre ordinateur.'
-            : 'Les données EXIF et GPS sont retirées dans votre navigateur avant l’envoi, sans recompression.'}
+            ? 'Les aperçus sont préparés dans votre navigateur (filigrane, 1600 px) : vos originaux et vos RAW ne quittent pas votre ordinateur.'
+            : 'JPEG et PNG : données EXIF et GPS retirées dans votre navigateur avant l’envoi, sans recompression. Autres formats : envoyés tels quels.'}
         </p>
       </div>
 
@@ -114,17 +127,31 @@ export function UploadPanel({ galleryId, kind, photos, onPhotoDone, disabled, di
           <div className="mt-2 h-1 w-full bg-mist" aria-hidden="true">
             <div className="h-full bg-ink transition-[width] duration-200" style={{ width: `${(state.finished / state.total) * 100}%` }} />
           </div>
+          {state.warnings > 0 && (
+            <div className="mt-3" data-testid={`avertissement-${kind}`}>
+              <Notice>
+                {state.warnings} fichier{state.warnings > 1 ? 's envoyés' : ' envoyé'} tel{state.warnings > 1 ? 's quels' : ' quel'}.{' '}
+                {METADATA_WARNING}
+              </Notice>
+            </div>
+          )}
           {visible.length > 0 && (
-            <ul className="mt-3 space-y-1 text-xs">
+            <ul className="mt-3 space-y-2 text-xs" data-testid={`fichiers-${kind}`}>
               {visible.map((item) => (
-                <li key={item.id} className="flex items-center gap-3">
-                  <span className="min-w-0 flex-1 truncate">{item.file.name}</span>
-                  <span className={clsx('shrink-0', item.status === 'error' && 'font-semibold')}>
-                    {item.status === 'error' ? `${STATUS.error} : ${item.error}` : STATUS[item.status]}
-                  </span>
-                  <span className="h-1 w-16 shrink-0 bg-mist" aria-hidden="true">
-                    <span className="block h-full bg-ink" style={{ width: `${Math.round(item.progress * 100)}%` }} />
-                  </span>
+                <li key={item.id}>
+                  <div className="flex items-center gap-3">
+                    <span className="min-w-0 flex-1 truncate">
+                      {item.file.name}
+                      {item.format && <span className="ml-2 font-label tracking-wider uppercase">{FORMAT_LABELS[item.format] ?? item.format}</span>}
+                    </span>
+                    <span className={clsx('shrink-0 text-right', item.status === 'error' && 'font-semibold')}>
+                      {item.status === 'error' ? `${STATUS.error} : ${item.error}` : STATUS[item.status]}
+                    </span>
+                    <span className="h-1 w-16 shrink-0 bg-mist" aria-hidden="true">
+                      <span className="block h-full bg-ink" style={{ width: `${Math.round(item.progress * 100)}%` }} />
+                    </span>
+                  </div>
+                  {item.warning && <p className="mt-0.5 italic">{item.warning}</p>}
                 </li>
               ))}
             </ul>
@@ -136,12 +163,12 @@ export function UploadPanel({ galleryId, kind, photos, onPhotoDone, disabled, di
 }
 
 /** Aperçu du filigrane sur un dégradé clair → sombre, visible avant le premier dépôt. */
-export function WatermarkPreview() {
+export function WatermarkPreview({ text = WATERMARK_TEXT, caption = 'Aperçu du filigrane, sur fond clair et sombre.' }) {
   const canvasRef = useRef(null)
   useEffect(() => {
     let cancelled = false
     Promise.all([import('../../../lib/gallery/processor.js'), import('../../../lib/gallery/render.js')]).then(async ([{ makeWatermarkTile }, { drawWatermark }]) => {
-      const tile = await makeWatermarkTile()
+      const tile = await makeWatermarkTile(text)
       const canvas = canvasRef.current
       if (cancelled || !canvas) return
       const ctx = canvas.getContext('2d')
@@ -157,11 +184,11 @@ export function WatermarkPreview() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [text])
   return (
     <figure className="mt-4">
       <canvas ref={canvasRef} width={800} height={450} className="w-full max-w-md border border-line" data-testid="apercu-filigrane" />
-      <figcaption className="mt-1 text-xs italic">Aperçu du filigrane, sur fond clair et sombre.</figcaption>
+      <figcaption className="mt-1 text-xs italic">{caption}</figcaption>
     </figure>
   )
 }

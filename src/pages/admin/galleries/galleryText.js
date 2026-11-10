@@ -58,6 +58,28 @@ export function deliveryMessage(g) {
   ].join('\n')
 }
 
+const TITLES = /^(m|mme|mlle|mr|mrs|ms|monsieur|madame|mademoiselle|famille|dr|docteur|maître|me)\.?$/i
+
+/**
+ * Prénom pour saluer le client : premier mot du nom enregistré, seulement
+ * s'il ressemble clairement à un prénom (pas de civilité, d'initiale, de
+ * couple « X et Y »…). Sinon null : le message commence par « Bonjour, ».
+ */
+export function greetingFirstName(name) {
+  const words = String(name ?? '').trim().split(/\s+/).filter(Boolean)
+  const first = words[0]
+  if (!first || TITLES.test(first)) return null
+  if (words.some((w) => /^(et|&|\+|\/)$/i.test(w))) return null
+  if (!/^\p{Lu}\p{Ll}+(?:[-'’]\p{Lu}?\p{Ll}+)*$/u.test(first)) return null
+  return first
+}
+
+/** Message de demande d'avis Google, au vouvoiement, envoyé par Mathilde elle-même. */
+export function reviewMessage(g, reviewUrl) {
+  const first = greetingFirstName(g.client_name)
+  return `${first ? `Bonjour ${first},` : 'Bonjour,'} j’espère que vos photos vous plaisent ! Si vous avez deux minutes, un petit avis sur Google m’aiderait beaucoup : ${reviewUrl}. Merci encore pour votre confiance, Mathilde`
+}
+
 /** Noms de fichiers sélectionnés, sans extension, séparés par des virgules (filtre texte de Lightroom). */
 export function lightroomList(photos) {
   return photos.map((p) => p.original_filename.replace(/\.[^.]+$/, '')).join(', ')

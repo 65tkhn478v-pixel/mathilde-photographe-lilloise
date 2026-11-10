@@ -3,9 +3,11 @@ import { Reveal } from '../components/Reveal'
 import { BookingEndBlock } from '../components/BookingEndBlock'
 import { CONTACT_EMAIL } from '../data/site'
 import { RETENTION_MONTHS } from '../../shared/booking.js'
-import { GALLERY_RETENTION } from '../../shared/galleries.js'
+import { usePublicSettings } from '../lib/publicSettings'
 
 export default function MentionsLegales() {
+  // Durées en vigueur (réglables dans l'espace Mathilde), valeurs du code en repli.
+  const retention = usePublicSettings()
   usePageMeta({
     title: 'Mentions légales',
     description: 'Mentions légales du site de Mathilde Lecomte, photographe à Lille.',
@@ -88,7 +90,7 @@ export default function MentionsLegales() {
                 .
               </p>
 
-              {/* Durées par défaut à valider avec la cliente (GALLERY_RETENTION, shared/galleries.js). */}
+              {/* Durées : réglages en vigueur (page Paramètres), lus sur /api/settings. */}
               <h3 id="galeries-clients" className="mt-6 font-display text-lg text-ink">
                 Galeries clients
               </h3>
@@ -114,9 +116,9 @@ export default function MentionsLegales() {
               </p>
               <p className="mt-2">
                 <strong className="font-normal italic">Conservation.</strong> La sélection reste
-                ouverte {GALLERY_RETENTION.selectionDays} jours ; les photos livrées restent
-                téléchargeables {GALLERY_RETENTION.deliveryDays} jours. La galerie est ensuite supprimée
-                automatiquement, ou {GALLERY_RETENTION.undeliveredPurgeDays} jours après une sélection
+                ouverte {retention.selection_days} jours ; les photos livrées restent
+                téléchargeables {retention.delivery_days} jours. La galerie est ensuite supprimée
+                automatiquement, ou {retention.undelivered_purge_days} jours après une sélection
                 qui n'a pas été livrée.
               </p>
               <p className="mt-2">
