@@ -2,24 +2,28 @@ import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import { TEMOIGNAGES } from '../data/temoignages'
-import { HOME_LIMIT, excerpt, formatMonth, prepareTestimonials } from '../lib/testimonials'
+import { excerpt, formatMonth, homeSelection, prepareTestimonials } from '../lib/testimonials'
 
 const ALL = prepareTestimonials(TEMOIGNAGES, import.meta.env.DEV ? (m) => console.warn(m) : undefined)
 
 const linkClasses = 'underline underline-offset-4 hover:text-accent'
 // Espace fine insécable à l'intérieur des guillemets français.
 const NNBSP = '\u202f'
+// À l'affichage seulement : l'espace avant ! ? ; : devient insécable, pour que
+// la ponctuation ne passe jamais seule à la ligne (le fichier reste tel quel).
+const frenchSpacing = (s) => s.replace(/ ([!?;:])/g, `${NNBSP}$1`)
 
 /**
  * « Ils m'ont fait confiance » : petits mots de clientes, recopiés à la main
  * dans src/data/temoignages.js. Rien n'est rendu tant que le fichier est vide.
- * variant="home" : 3 plus récents, messages longs coupés ; "full" : tous.
+ * variant="home" : 3 au plus (choisis par `accueil: true`, sinon les premiers
+ * du tri), messages longs coupés ; "full" : tous.
  */
 export function Testimonials({ variant = 'home' }) {
   const items = ALL
   if (!items.length) return null
   const home = variant === 'home'
-  const shown = home ? items.slice(0, HOME_LIMIT) : items
+  const shown = home ? homeSelection(items) : items
 
   return (
     <section
@@ -54,7 +58,7 @@ export function Testimonials({ variant = 'home' }) {
                 <blockquote className="font-display text-lg leading-loose text-ink italic md:text-xl md:leading-loose">
                   <p>
                     «{NNBSP}
-                    {text}
+                    {frenchSpacing(text)}
                     {NNBSP}»
                   </p>
                 </blockquote>
@@ -67,7 +71,13 @@ export function Testimonials({ variant = 'home' }) {
                   </p>
                 )}
                 <figcaption className="font-label mt-5 text-xs tracking-[0.2em] text-ink uppercase">
-                  {t.nom} · <time dateTime={t.date}>{formatMonth(t.date)}</time>
+                  {t.nom}
+                  {t.date && (
+                    <>
+                      {' · '}
+                      <time dateTime={t.date}>{formatMonth(t.date)}</time>
+                    </>
+                  )}
                   {t.seance && <> · Séance {t.seance}</>}
                 </figcaption>
               </motion.figure>
@@ -75,7 +85,7 @@ export function Testimonials({ variant = 'home' }) {
           })}
         </div>
 
-        {home && items.length > HOME_LIMIT && (
+        {home && items.length > shown.length && (
           <p className="mt-14 text-center text-sm">
             <Link to="/a-propos#temoignages" className={linkClasses}>
               Lire tous les témoignages
