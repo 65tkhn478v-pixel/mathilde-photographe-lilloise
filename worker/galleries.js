@@ -34,6 +34,7 @@ import { clientIp, error, json, readJson } from './http.js'
 import { hit, ipSubject, isBlocked, reset, sweep } from './rateLimit.js'
 import { notifySelectionValidated } from './notify.js'
 import { getSettings } from './settings.js'
+import { storageSummary } from './storage.js'
 
 const SLUG_ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789'
 const SESSION_DAYS = 30
@@ -452,6 +453,61 @@ export async function deleteGallery(request, env, { id }) {
   if (!g) return error(404, NOT_FOUND)
   const objects = await destroyGallery(env, g)
   return json({ deleted: true, objects })
+}
+
+// ---- Admin : stockage et tri (page Paramètres) -------------------------------
+
+export async function storage(request, env) {
+  return json(await storageSummary(env, effectiveStatus))
+}
+
+/**
+ * Supprime les aperçus de sélection d'une galerie livrée (versions filigranées
+ * et couverture floutée) : les photos finales et l'accès du client restent
+ * intacts ; les noms des photos sélectionnées restent lisibles dans l'admin.
+ */
+export async function clearProofs(request, env, { id }) {
+  const g = await galleryById(env.DB, id)
+  if (!g) return error(404, NOT_FOUND)
+  const nowIso = new Date().toISOString()
+  if (effectiveStatus(g, nowIso) !== 'delivered') {
+    return error(409, 'Seuls les aperçus d’une galerie livrée peuvent être supprimés.')
+  }
+  const freed = await deletePrefixStats(env, `galleries/${g.storage_key}/proof/`)
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE gallery_photos SET has_thumb = 0, has_preview = 0, has_blur = 0, complete = 0,
+         thumb_bytes = NULL, preview_bytes = NULL, blur_bytes = NULL
+       WHERE gallery_id = ? AND kind = 'proof'`
+    ).bind(id),
+    env.DB.prepare(
+      `UPDATE galleries SET proofs_purged_at = COALESCE(proofs_purged_at, ?), updated_at = ?,
+         cover_photo_id = CASE WHEN cover_photo_id IN (SELECT id FROM gallery_photos WHERE gallery_id = ? AND kind = 'proof') THEN NULL ELSE cover_photo_id END
+       WHERE id = ?`
+    ).bind(nowIso, nowIso, id, id),
+  ])
+  return json({ freed_bytes: freed.bytes, objects: freed.objects, gallery: serializeAdminGallery(await galleryById(env.DB, id), nowIso) })
+}
+
+/** Avance la suppression automatique : date antérieure à l'actuelle, jamais dans le passé. */
+export async function advancePurge(request, env, { id }) {
+  const g = await galleryById(env.DB, id)
+  if (!g) return error(404, NOT_FOUND)
+  const body = (await readJson(request)) ?? {}
+  const purgeAt = endOfDay(str(body.date))
+  const nowIso = new Date().toISOString()
+  if (!purgeAt) return error(422, 'Date invalide.', { errors: { date: 'Date invalide.' } })
+  if (purgeAt <= nowIso) return error(422, 'La date ne peut pas être dans le passé.', { errors: { date: 'La date ne peut pas être dans le passé.' } })
+  if (purgeAt >= g.purge_at) {
+    return error(422, 'Choisissez une date antérieure à la suppression prévue.', { errors: { date: 'Choisissez une date antérieure à la suppression prévue.' } })
+  }
+  // Le téléchargement ne peut pas durer au-delà de la suppression.
+  const expires = g.delivery_expires_at && g.delivery_expires_at > purgeAt ? purgeAt : g.delivery_expires_at
+  await env.DB
+    .prepare('UPDATE galleries SET purge_at = ?, delivery_expires_at = ?, updated_at = ? WHERE id = ?')
+    .bind(purgeAt, expires, nowIso, id)
+    .run()
+  return json({ gallery: serializeAdminGallery(await galleryById(env.DB, id), nowIso) })
 }
 
 /** Réservations confirmées récentes (préremplissage d'une galerie). */

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useApiData } from '../../lib/useApiData'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import * as Tabs from '@radix-ui/react-tabs'
 import clsx from 'clsx'
 import { api } from '../../lib/api'
@@ -23,6 +23,20 @@ const TABS = [
   { value: 'galeries', label: 'Galeries' },
 ]
 const TAB_KEY = 'espace-mathilde:onglet'
+const ADMIN_HOME = '/espace-mathilde'
+export const SETTINGS_PATH = '/espace-mathilde/parametres'
+// Page Paramètres : chargée seulement quand Mathilde l'ouvre.
+const SettingsPage = lazy(() => import('./settings/SettingsPage'))
+
+/** Icône « Paramètres » : roue dentée fine, même trait que les autres icônes. */
+function GearIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+    </svg>
+  )
+}
 
 function readStoredTab() {
   try {
@@ -51,8 +65,9 @@ function useNoIndex() {
  * Espace admin de Mathilde (/espace-mathilde) : non lié depuis le site public,
  * protégé par mot de passe (session vérifiée côté serveur à chaque requête).
  */
-export default function EspaceMathilde() {
+export default function EspaceMathilde({ page = null }) {
   useNoIndex()
+  const navigate = useNavigate()
   // Déconnexion ou session expirée pendant l'utilisation.
   const [signedOut, setSignedOut] = useState(false)
   const [expired, setExpired] = useState(false)
@@ -146,7 +161,12 @@ export default function EspaceMathilde() {
     )
   }
 
-  const shared = { onExpired, onPendingCount: setPendingCount, onFeedback, onGoToRequests: () => changeTab('demandes') }
+  // Depuis Paramètres, un clic vers un onglet ramène à l'espace principal.
+  const goToTab = (value) => {
+    changeTab(value)
+    if (page) navigate(ADMIN_HOME)
+  }
+  const shared = { onExpired, onPendingCount: setPendingCount, onFeedback, onGoToRequests: () => goToTab('demandes') }
 
   return (
     <Shell
@@ -154,7 +174,7 @@ export default function EspaceMathilde() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <p className="text-sm text-ink" aria-live="polite">
             {pendingCount > 0 ? (
-              <button type="button" onClick={() => changeTab('demandes')} className="rounded-full">
+              <button type="button" onClick={() => goToTab('demandes')} className="rounded-full">
                 <StatusBadge state="pending" className="py-1">
                   {pendingCount} en attente
                 </StatusBadge>
@@ -164,60 +184,75 @@ export default function EspaceMathilde() {
               <span className="italic">Aucune demande en attente</span>
             )}
           </p>
+          <Link
+            to={SETTINGS_PATH}
+            aria-label="Paramètres"
+            aria-current={page === 'parametres' ? 'page' : undefined}
+            title="Paramètres"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-mist/60 aria-[current=page]:bg-mist"
+          >
+            <GearIcon className="h-5 w-5" />
+          </Link>
           <button type="button" className={adminButton('quiet')} onClick={logout}>
             Se déconnecter
           </button>
         </div>
       }
     >
-      <Tabs.Root value={tab ?? 'calendrier'} onValueChange={changeTab}>
-        <Tabs.List
-          aria-label="Sections de l'espace"
-          className="flex gap-1 overflow-x-auto border-b border-line"
-        >
-          {TABS.map((t) => (
-            <Tabs.Trigger
-              key={t.value}
-              value={t.value}
-              className={clsx(
-                // relative : les textes pour lecteurs d'écran des badges restent
-                // dans la barre d'onglets défilante (pas de débordement sur mobile).
-                'font-label relative -mb-px min-h-11 shrink-0 border-b-2 px-2.5 text-xs tracking-wide whitespace-nowrap uppercase focus-visible:outline-offset-[-2px] sm:px-5 sm:text-sm',
-                'border-transparent text-ink data-[state=active]:border-ink'
-              )}
-            >
-              {t.label}
-              {t.value === 'galeries' && galleryCount > 0 && (
-                <span className="ml-2 rounded-full border border-confirmed-line bg-confirmed-bg px-1.5 text-xs text-confirmed">
-                  {galleryCount}
-                  <span className="sr-only"> sélection{galleryCount > 1 ? 's' : ''} à retoucher</span>
-                </span>
-              )}
-              {t.value === 'demandes' && pendingCount > 0 && (
-                <span className="ml-2 rounded-full border border-pending-line bg-pending-bg px-1.5 text-xs text-pending">
-                  {pendingCount}
-                  <span className="sr-only"> en attente</span>
-                </span>
-              )}
-            </Tabs.Trigger>
-          ))}
-        </Tabs.List>
-        <Tabs.Content value="calendrier" className="pt-6 focus-visible:outline-none">
-          <CalendarTab {...shared} />
-        </Tabs.Content>
-        <Tabs.Content value="demandes" className="pt-6 focus-visible:outline-none">
-          <BookingsTab {...shared} />
-        </Tabs.Content>
-        <Tabs.Content value="creneaux" className="pt-6 focus-visible:outline-none">
-          <SlotsTab {...shared} />
-        </Tabs.Content>
-        <Tabs.Content value="historique" className="pt-6 focus-visible:outline-none">
-          <HistoryTab {...shared} />
-        </Tabs.Content>
-        <Tabs.Content value="galeries" className="pt-6 focus-visible:outline-none">
-          <GalleriesTab onExpired={onExpired} onFeedback={onFeedback} onGalleryCount={setGalleryCount} />
-        </Tabs.Content>
-      </Tabs.Root>
+      {page === 'parametres' ? (
+        <Suspense fallback={<Loading />}>
+          <SettingsPage onBack={() => navigate(ADMIN_HOME)} onExpired={onExpired} onFeedback={onFeedback} />
+        </Suspense>
+      ) : (
+        <Tabs.Root value={tab ?? 'calendrier'} onValueChange={changeTab}>
+          <Tabs.List
+            aria-label="Sections de l'espace"
+            className="flex gap-1 overflow-x-auto border-b border-line"
+          >
+            {TABS.map((t) => (
+              <Tabs.Trigger
+                key={t.value}
+                value={t.value}
+                className={clsx(
+                  // relative : les textes pour lecteurs d'écran des badges restent
+                  // dans la barre d'onglets défilante (pas de débordement sur mobile).
+                  'font-label relative -mb-px min-h-11 shrink-0 border-b-2 px-2.5 text-xs tracking-wide whitespace-nowrap uppercase focus-visible:outline-offset-[-2px] sm:px-5 sm:text-sm',
+                  'border-transparent text-ink data-[state=active]:border-ink'
+                )}
+              >
+                {t.label}
+                {t.value === 'galeries' && galleryCount > 0 && (
+                  <span className="ml-2 rounded-full border border-confirmed-line bg-confirmed-bg px-1.5 text-xs text-confirmed">
+                    {galleryCount}
+                    <span className="sr-only"> sélection{galleryCount > 1 ? 's' : ''} à retoucher</span>
+                  </span>
+                )}
+                {t.value === 'demandes' && pendingCount > 0 && (
+                  <span className="ml-2 rounded-full border border-pending-line bg-pending-bg px-1.5 text-xs text-pending">
+                    {pendingCount}
+                    <span className="sr-only"> en attente</span>
+                  </span>
+                )}
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
+          <Tabs.Content value="calendrier" className="pt-6 focus-visible:outline-none">
+            <CalendarTab {...shared} />
+          </Tabs.Content>
+          <Tabs.Content value="demandes" className="pt-6 focus-visible:outline-none">
+            <BookingsTab {...shared} />
+          </Tabs.Content>
+          <Tabs.Content value="creneaux" className="pt-6 focus-visible:outline-none">
+            <SlotsTab {...shared} />
+          </Tabs.Content>
+          <Tabs.Content value="historique" className="pt-6 focus-visible:outline-none">
+            <HistoryTab {...shared} />
+          </Tabs.Content>
+          <Tabs.Content value="galeries" className="pt-6 focus-visible:outline-none">
+            <GalleriesTab onExpired={onExpired} onFeedback={onFeedback} onGalleryCount={setGalleryCount} />
+          </Tabs.Content>
+        </Tabs.Root>
+      )}
       <Toast toast={toast} onDone={clearToast} />
     </Shell>
   )

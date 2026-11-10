@@ -8,6 +8,7 @@ import { GENERIC_ERROR, error } from './http.js'
 import { createBooking, getSlots } from './public.js'
 import * as galleries from './galleries.js'
 import * as settings from './settings.js'
+import * as storage from './storage.js'
 
 const ID = '(?<id>\\d+)'
 const DATE = '(?<date>\\d{4}-\\d{2}-\\d{2})'
@@ -48,6 +49,13 @@ const ROUTES = [
   ['GET', '/api/admin/settings', settings.readSettings],
   ['PUT', '/api/admin/settings', settings.saveSettings],
   ['DELETE', '/api/admin/settings', settings.resetSettings],
+
+  // Paramètres — stockage et tri
+  ['GET', '/api/admin/storage', galleries.storage],
+  ['POST', '/api/admin/storage/verify', storage.verifyStorage],
+  ['POST', '/api/admin/storage/orphans/delete', storage.deleteOrphans],
+  ['POST', `${GAL}/clear-proofs`, galleries.clearProofs],
+  ['POST', `${GAL}/advance-purge`, galleries.advancePurge],
 
   // Galeries clients — admin
   ['GET', '/api/admin/galleries', galleries.listGalleries],

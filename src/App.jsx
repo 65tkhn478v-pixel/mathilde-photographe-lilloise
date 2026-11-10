@@ -48,6 +48,7 @@ function App() {
             <Route path="/reserver" element={<Reserver />} />
             <Route path="/mentions-legales" element={<MentionsLegales />} />
             <Route path={ADMIN_PATH} element={<EspaceMathilde />} />
+            <Route path={`${ADMIN_PATH}/parametres`} element={<EspaceMathilde page="parametres" />} />
             <Route path="/galerie/:slug" element={<Galerie />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

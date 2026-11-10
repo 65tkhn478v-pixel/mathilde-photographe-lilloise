@@ -139,9 +139,38 @@ Mathilde dépose ensuite les **photos finales HD**, que le client télécharge.
   validation → téléchargement des photos finales).
 - **Aucun original brut en ligne** : les aperçus (600 px et 1600 px, WebP,
   filigrane) sont générés dans le navigateur de Mathilde (Web Worker,
-  `src/lib/gallery/`). Les finales HD sont envoyées telles quelles mais **sans
-  EXIF/GPS/XMP/IPTC**, retirés sans recompression (`jpegMeta.js`, profil ICC et
-  orientation conservés).
+  `src/lib/gallery/`) ; ni l'original ni le RAW ne sont envoyés.
+- **Formats** (`formats.js`, détection par la signature du fichier, pas par
+  l'extension) :
+  - aperçus : JPEG, PNG, WebP, AVIF ; HEIC et TIFF quand le navigateur sait
+    les lire (Safari), sinon message « Format non lisible par ce navigateur… » ;
+    **RAW Canon CR3 / CR2** par leur aperçu JPEG intégré (`rawPreview.js` :
+    JPEG pleine taille de la piste 1 du CR3 ou de l'IFD0 du CR2, sinon le plus
+    grand trouvé ; orientation du RAW appliquée ; lecture partielle du fichier) ;
+  - finales : toute photo, RAW compris, livrée telle quelle. Métadonnées
+    retirées sans recompression pour JPEG (`jpegMeta.js`) et PNG
+    (`pngStrip.js` : eXIf, tEXt, zTXt, iTXt, tIME) ; avertissement pour les
+    autres formats. Vignette neutre si le navigateur ne sait pas afficher le
+    fichier. Au-delà de 50 Mo : envoi en morceaux de 25 Mo (multipart R2,
+    reprise après coupure, abandon propre ; table `gallery_uploads`).
+- **Demande d'avis Google** : bloc sous la grille d'une galerie livrée, rappel
+  discret après un premier téléchargement (une fois par visite), lien « Laisser
+  un avis » dans le footer, bouton admin « Copier le message de demande
+  d'avis ». Lien unique : `GOOGLE_REVIEW_URL` (`shared/settings.js`),
+  remplaçable depuis Paramètres (repli sur la constante si la valeur est
+  invalide).
+- **Paramètres** (`/espace-mathilde/parametres`, icône ⚙) :
+  - stockage : total calculé depuis D1 (taille réelle de chaque version
+    déposée), jauge sur les 10 Go inclus, galeries par poids, « Vérifier sur
+    le serveur » (recompte R2 page par page, complète les tailles des photos
+    déposées avant cette version, supprime les fichiers orphelins après
+    confirmation), « Supprimer les aperçus » (galerie livrée), « Avancer la
+    suppression », « Supprimer la galerie » ;
+  - réglages par défaut (table `settings`) : photos incluses, durées de
+    sélection et de téléchargement, délai de suppression des aperçus, texte du
+    filigrane, lien d'avis. Ils s'appliquent aux nouvelles galeries et aux
+    prochaines actions. Le mot de passe admin ne se change pas ici (secret
+    Cloudflare `ADMIN_PASSWORD_HASH`).
 - **Stockage** : Cloudflare R2 (binding `GALLERY_BUCKET`, bucket
   `mathilde-galeries`), jamais public : chaque image est servie par le Worker
   après vérification de la session et du statut de la galerie.
@@ -150,10 +179,12 @@ Mathilde dépose ensuite les **photos finales HD**, que le client télécharge.
   30 jours), 10 essais de code par IP et par galerie en 15 min. Générer un
   nouveau code invalide l'ancien et toutes les sessions client.
   ⚠ Changer `SESSION_SECRET` invalide aussi tous les codes de galerie.
-- **Conservation (à valider avec la cliente)** : `GALLERY_RETENTION` dans
-  `shared/galleries.js` — sélection 30 jours, téléchargement 90 jours après la
-  livraison, suppression ensuite (ou 60 jours après une sélection non livrée),
-  aperçus supprimés 7 jours après la livraison. Nettoyage quotidien par Cron
+- **Conservation** : valeurs d'origine dans `GALLERY_RETENTION`
+  (`shared/galleries.js`) — sélection 30 jours, téléchargement 90 jours après
+  la livraison, suppression ensuite (ou 60 jours après une sélection non
+  livrée), aperçus supprimés 7 jours après la livraison. Les quatre premières
+  durées se règlent dans Paramètres ; les mentions légales affichent les
+  valeurs en vigueur (`/api/settings`). Nettoyage quotidien par Cron
   Trigger (`wrangler.jsonc`), ou bouton/route `POST /api/admin/galleries/cleanup`.
 - **« Tout télécharger »** : ZIP construit en streaming dans le navigateur
   (`client-zip`, sans compression) et écrit directement sur le disque quand
